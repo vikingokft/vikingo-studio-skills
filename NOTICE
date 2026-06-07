@@ -9,6 +9,12 @@ mellékelte) vagy az upstream repóban található.
 BEMÁSOLT (vendored) FORRÁSOK
 ----------------------------
 
+0. WordPress készlet — Lonsdale201/wp-agent-skills
+   Repo:    https://github.com/Lonsdale201/wp-agent-skills
+   Licenc:  MIT
+   Mappák:  wordpress/  woocommerce/  jet-engine/  plugin-scaffold/  wp-rocket/
+   (Csak a megtartott domainek; a kigyomláltakat nem vesszük át.)
+
 1. Stripe — agent-toolkit
    Repo:    https://github.com/stripe/agent-toolkit
    Licenc:  MIT

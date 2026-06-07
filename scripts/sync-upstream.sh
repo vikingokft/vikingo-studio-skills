@@ -31,10 +31,12 @@ trap 'rm -rf "$TMP_ROOT"' EXIT
 grep -E '^\s*vendored\s*\|' "$SRC_CONF" | while IFS='|' read -r mode id repo ref from to; do
   id="$(echo "$id" | xargs)"; repo="$(echo "$repo" | xargs)"; ref="$(echo "$ref" | xargs)"
   from="$(echo "$from" | xargs)"; to="$(echo "$to" | xargs)"
-  echo "→ [$id] klónozás: $repo ($ref)"
   clone="$TMP_ROOT/$id"
-  git clone --quiet --depth 1 --branch "$ref" --single-branch "$repo" "$clone" 2>/dev/null \
-    || git clone --quiet --depth 1 "$repo" "$clone"   # ha a ref SHA, fallback teljes default branch
+  if [ ! -d "$clone" ]; then
+    echo "→ [$id] klónozás: $repo ($ref)"
+    git clone --quiet --depth 1 --branch "$ref" --single-branch "$repo" "$clone" 2>/dev/null \
+      || git clone --quiet --depth 1 "$repo" "$clone"   # ha a ref SHA, fallback teljes default branch
+  fi   # azonos id-jű sorok (egy repo több domainje) újrahasználják a klónt
 
   src_base="$clone/$from"
   if [ ! -d "$src_base" ]; then

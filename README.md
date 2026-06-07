@@ -4,7 +4,9 @@ A Vikingo Stúdió kurált **agent-skill** gyűjteménye Claude Code-hoz: több 
 forrásból összeválogatott skillek egy helyen, naprakészen.
 
 Egy skill egy specializált tudás-csomag, amit a Claude Code automatikusan előhúz,
-amikor releváns (pl. Stripe-integráció, biztonsági audit, dizájn-generálás).
+amikor releváns (pl. WordPress/WooCommerce fejlesztés, Stripe-integráció, biztonsági
+audit, dizájn-generálás). Ez a repó a Vikingo Stúdió **egyetlen** skill-forrása:
+a WordPress készlet és az általános dev/SaaS skillek is itt élnek.
 
 ---
 
@@ -13,8 +15,9 @@ amikor releváns (pl. Stripe-integráció, biztonsági audit, dizájn-generálá
 A skillek **két módon** kerülnek hozzád, a forrás licencétől függően:
 
 - **Bemásolt (vendored):** a nyílt-licencű források skilljei itt élnek a repóban,
-  domain-mappákban (`payments/`, `design/`, `google/`, `web/`). Egy napi szinkron
-  tartja őket naprakészen az upstreamből.
+  domain-mappákban (`wordpress/`, `woocommerce/`, `jet-engine/`, `plugin-scaffold/`,
+  `wp-rocket/`, `payments/`, `design/`, `google/`, `web/`). Egy napi szinkron tartja
+  őket naprakészen az upstreamből.
 - **Külső (external):** a licenc nélküli források (Claude, OpenAI, Notion, Vercel)
   **nincsenek bemásolva** — a telepítő a te gépedre klónozza őket közvetlenül az
   eredeti repóból. Így mindig frissek, és ez a repó nem oszt újra licenc nélküli
@@ -49,6 +52,7 @@ git pull && ./install-skills.sh
 
 | Forrás | Terület | Licenc | Mappa |
 |---|---|---|---|
+| [wp-agent-skills (Lonsdale201)](https://github.com/Lonsdale201/wp-agent-skills) | WordPress, WooCommerce, JetEngine, WP Rocket, plugin-scaffold | MIT | `wordpress/` `woocommerce/` `jet-engine/` `plugin-scaffold/` `wp-rocket/` |
 | [Stripe agent-toolkit](https://github.com/stripe/agent-toolkit) | fizetés | MIT | `payments/` |
 | [Google Labs Stitch](https://github.com/google-labs-code/stitch-skills) | dizájn → kód | Apache-2.0 | `design/` |
 | [Google Gemini](https://github.com/google-gemini/gemini-skills) | Gemini API | Apache-2.0 | `google/` |

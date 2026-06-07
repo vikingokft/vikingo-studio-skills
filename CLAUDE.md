@@ -32,6 +32,8 @@ vikingo-studio-skills/
 │   ├── upstream-sync.yml    — NAPI sync → PR → high-trust auto-merge
 │   └── validate.yml         — SKILL.md frontmatter lint (required check)
 ├── licenses/               — a vendored források LICENSE-ei (Apache/MIT megőrzés)
+├── wordpress/ woocommerce/ jet-engine/ plugin-scaffold/ wp-rocket/
+│                           — vendored: WordPress készlet (Lonsdale201/wp-agent-skills)
 ├── payments/               — vendored: Stripe
 ├── design/                 — vendored: Google Stitch
 ├── google/                 — vendored: Gemini + Workspace CLI
@@ -92,7 +94,14 @@ Pipe-elválasztott sorok: `mode | id | repo | ref | from | to`
 - **Branch protection / auto-merge:** a repón engedélyezni kell az auto-merge-öt, és a
   `validate` checket required-dá tenni, hogy az auto-merge csak zöld validáció után fusson.
 
+## Egyesített készlet — ez az egyetlen forrás
+
+Ez a repó a Vikingo Stúdió EGYETLEN skill-gyűjteménye. A korábbi `vikingokft/wp-agent-skills`
+fork helyett a WordPress készletet közvetlenül a `Lonsdale201/wp-agent-skills` upstreamből
+húzzuk (MIT), a megtartott 5 domainnel (`wordpress`, `woocommerce`, `jet-engine`,
+`plugin-scaffold`, `wp-rocket`). A `vikingokft/wp-agent-skills` fork ezzel nyugdíjazható
+(archiválható), mert a tartalma ide került.
+
 ## Kapcsolódó repó
 
-- `wp-agent-skills` (vikingokft) — a WordPress-fókuszú testvér-gyűjtemény, ugyanezzel a
-  symlink-telepítő és napi sync mintával (de egyetlen upstream forkja).
+- `Lonsdale201/wp-agent-skills` — a WordPress készlet upstream forrása (a `wp` id a sources.conf-ban).

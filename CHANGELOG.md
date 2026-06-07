@@ -5,6 +5,12 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 ## [Unreleased]
 
 ### Added
+- **WordPress készlet egyesítése:** a `Lonsdale201/wp-agent-skills` (MIT) 5 megtartott
+  domainje (wordpress, woocommerce, jet-engine, plugin-scaffold, wp-rocket = 62 skill)
+  bemásolva. Ezzel a `vikingokft/wp-agent-skills` fork nyugdíjazható: ez a repó lett a
+  Vikingo Stúdió egyetlen skill-forrása (összesen 178 vendored skill).
+- A `sync-upstream.sh` egy repót csak egyszer klónoz akkor is, ha több domaint hoz belőle
+  (azonos `id` a sources.conf-ban).
 - Induló kiadás: multi-source kurátor a vikingo-studio-skills repóhoz.
 - **Vendored hibrid:** 116 skill 5 nyílt-licencű forrásból bemásolva
   (Stripe, Google Stitch, Gemini, Google Workspace CLI, frontend-security),
