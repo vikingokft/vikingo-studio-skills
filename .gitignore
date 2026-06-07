@@ -1,0 +1,6 @@
+# Az external (licenc nélküli) források lokális klónjai — SOHA nem kerülnek a repóba.
+# Ezeket a felhasználó gépén az install-skills.sh húzza le az eredeti repóból.
+.external/
+
+.DS_Store
+*.log

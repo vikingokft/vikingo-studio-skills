@@ -1,0 +1,38 @@
+name: Validate skills
+
+# Ellenőrzi, hogy minden bemásolt (vendored) SKILL.md érvényes frontmatterrel
+# kezdődik (legalább egy `name:` vagy `description:` mező a `---` blokkban).
+# Ez a required check az auto-merge előtt.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: SKILL.md frontmatter ellenőrzése
+        run: |
+          set -euo pipefail
+          fail=0
+          count=0
+          while IFS= read -r f; do
+            count=$((count + 1))
+            first="$(head -1 "$f")"
+            if [ "$first" != "---" ]; then
+              echo "✗ $f — nem '---'-rel kezdődik (hiányzó frontmatter)"
+              fail=1
+              continue
+            fi
+            if ! awk 'NR>1 && /^---/{exit} NR>1' "$f" | grep -qE '^(name|description):'; then
+              echo "✗ $f — nincs name/description a frontmatterben"
+              fail=1
+            fi
+          done < <(find . -name SKILL.md -not -path '*/.git/*' -not -path './.external/*')
+          echo "Ellenőrzött SKILL.md: $count"
+          exit $fail

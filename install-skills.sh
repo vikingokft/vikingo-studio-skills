@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# install-skills.sh
+#
+# Két dolgot csinál:
+#   1) A repóba BEMÁSOLT (vendored) skilleket symlinkeli ~/.claude/skills/-be.
+#   2) Az EXTERNAL forrásokat (licenc nélküli, nem bemásolt) a GÉPEDRE klónozza a
+#      .external/ mappába, majd onnan symlinkeli a skilleket. Így a licenc nélküli
+#      tartalmat nem ez a repó osztja újra — te húzod le közvetlenül az eredetiből.
+#
+# Újrafuttatás biztonságos: frissíti a meglévő symlinkeket, az external klónokat
+# pedig `git pull`-lal naprakészre hozza.
+#
+# Használat:
+#   ./install-skills.sh
+
+set -euo pipefail
+
+REPO="$(cd "$(dirname "$0")" && pwd)"
+SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+EXT_DIR="$REPO/.external"
+SRC_CONF="$REPO/sources.conf"
+
+mkdir -p "$SKILLS_DIR"
+
+link_skill() {  # $1 = skill könyvtár
+  local skill_dir="$1" name
+  name="$(basename "$skill_dir")"
+  ln -sfn "$skill_dir" "$SKILLS_DIR/$name"
+}
+
+# 1) Vendored skillek (a repóban) — minden SKILL.md a domain-mappákban.
+vendored=0
+while IFS= read -r skill_md; do
+  link_skill "$(dirname "$skill_md")"
+  vendored=$((vendored + 1))
+done < <(find "$REPO" -name SKILL.md -not -path '*/.git/*' -not -path "$EXT_DIR/*")
+echo "→ $vendored vendored skill symlinkelve"
+
+# 2) External források — klónozás a gépedre, majd symlink.
+if [ -f "$SRC_CONF" ]; then
+  mkdir -p "$EXT_DIR"
+  grep -E '^\s*external\s*\|' "$SRC_CONF" | while IFS='|' read -r mode id repo ref from to; do
+    id="$(echo "$id" | xargs)"; repo="$(echo "$repo" | xargs)"; ref="$(echo "$ref" | xargs)"
+    from="$(echo "$from" | xargs)"
+    clone="$EXT_DIR/$id"
+    if [ -d "$clone/.git" ]; then
+      echo "→ [$id] frissítés (git pull)"
+      git -C "$clone" pull --quiet --ff-only 2>/dev/null || echo "  ⚠ pull sikertelen, a meglévő klónt használom"
+    else
+      echo "→ [$id] klónozás: $repo ($ref)"
+      git clone --quiet --depth 1 --branch "$ref" --single-branch "$repo" "$clone" 2>/dev/null \
+        || git clone --quiet --depth 1 "$repo" "$clone"
+    fi
+    ext=0
+    if [ -d "$clone/$from" ]; then
+      while IFS= read -r skill_md; do
+        link_skill "$(dirname "$skill_md")"
+        ext=$((ext + 1))
+      done < <(find "$clone/$from" -name SKILL.md -not -path '*/.git/*')
+    fi
+    echo "  ✓ $ext external skill symlinkelve ($id)"
+  done
+fi
+
+echo "✓ Kész → $SKILLS_DIR"

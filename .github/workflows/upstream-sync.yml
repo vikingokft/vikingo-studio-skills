@@ -1,0 +1,99 @@
+name: Upstream sync (napi)
+
+# Naponta szinkronizálja a vendored forrásokat (sources.conf) az upstreamből.
+# Ha van eltérés, branchet készít és PR-t nyit. A vendored források nyílt-licencűek
+# és high-trust (main követés), ezért a PR-t — ha a validáció zöld — automatikusan
+# mergeli. Az external (licenc nélküli) forrásokat NEM érinti: azokat a felhasználó
+# gépén az install-skills.sh húzza, nem ez a repó osztja újra.
+#
+# EGYSZERI BEÁLLÍTÁS (ha az org letiltja a GITHUB_TOKEN write-jogát):
+#   Hozz létre egy fine-grained PAT-ot a vikingokft/vikingo-studio-skills repóra
+#   (Contents: RW + Pull requests: RW), és tedd be repo secretként: SYNC_PAT.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"     # minden nap 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+env:
+  SYNC_BRANCH: automation/upstream-sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SYNC_PAT || github.token }}
+
+      - name: Vendored források bemásolása (sync)
+        env:
+          SKIP_INSTALL: "1"
+        run: bash scripts/sync-upstream.sh
+
+      - name: Eltérés ellenőrzése
+        id: diff
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Nincs eltérés a vendored forrásokban."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git status --porcelain > /tmp/diffstat.txt
+            echo "Eltérés található:"
+            cat /tmp/diffstat.txt
+          fi
+
+      - name: Szinkron branch + PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$SYNC_BRANCH"
+          git add -A
+          git commit -m "Upstream sync (auto): vendored források frissítése"
+          git push -f origin "$SYNC_BRANCH"
+
+          {
+            echo "A napi szinkron **eltérést talált** a vendored forrásokban (sources.conf)."
+            echo
+            echo "## Változások"
+            echo '```'
+            cat /tmp/diffstat.txt
+            echo '```'
+            echo
+            echo "## Bevezetés helyben"
+            echo '```bash'
+            echo "git pull && ./install-skills.sh"
+            echo '```'
+          } > /tmp/pr-body.md
+
+          existing=$(gh pr list --head "$SYNC_BRANCH" --base main --state open --json number --jq '.[0].number' || true)
+          if [ -z "$existing" ]; then
+            num=$(gh pr create --base main --head "$SYNC_BRANCH" \
+              --title "Upstream sync: vendored források frissültek" \
+              --body-file /tmp/pr-body.md --json number --jq .number 2>/dev/null \
+              || gh pr create --base main --head "$SYNC_BRANCH" \
+                 --title "Upstream sync: vendored források frissültek" \
+                 --body-file /tmp/pr-body.md)
+          else
+            gh pr edit "$existing" --body-file /tmp/pr-body.md
+            num="$existing"
+          fi
+
+          # High-trust auto-merge: a validate check zöldje után mergel.
+          gh pr merge "$num" --auto --squash || echo "Auto-merge nem engedélyezett a repón — a PR kézi merge-re vár."

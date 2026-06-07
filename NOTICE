@@ -1,0 +1,54 @@
+vikingo-studio-skills — forrás-attribúció
+==========================================
+
+Ez a repó harmadik felektől származó agent-skilleket gyűjt össze. Az alábbi
+források skilljei BE VANNAK MÁSOLVA (vendored) ebbe a repóba, mindegyik a saját
+eredeti licence alatt. A licenc-szöveg az egyes skill-mappákban (ahol az upstream
+mellékelte) vagy az upstream repóban található.
+
+BEMÁSOLT (vendored) FORRÁSOK
+----------------------------
+
+1. Stripe — agent-toolkit
+   Repo:    https://github.com/stripe/agent-toolkit
+   Licenc:  MIT
+   Mappa:   payments/
+
+2. Google Labs — Stitch skills
+   Repo:    https://github.com/google-labs-code/stitch-skills
+   Licenc:  Apache-2.0
+   Mappa:   design/
+
+3. Google — Gemini skills
+   Repo:    https://github.com/google-gemini/gemini-skills
+   Licenc:  Apache-2.0
+   Mappa:   google/
+
+4. Google Workspace — CLI agent skills
+   Repo:    https://github.com/googleworkspace/cli
+   Licenc:  Apache-2.0
+   Mappa:   google/
+
+5. Schalk Neethling — webdev-agent-skills (frontend-security)
+   Repo:    https://github.com/schalkneethling/webdev-agent-skills
+   Licenc:  MIT
+   Mappa:   web/
+
+Az Apache-2.0 licencű forrásoknál a NOTICE-megőrzési kötelezettség e fájllal
+teljesül; a teljes licenc-szöveg az upstream repókban érhető el.
+
+
+KÜLSŐ (external) FORRÁSOK — NINCSENEK BEMÁSOLVA
+-----------------------------------------------
+
+Az alábbi források nem rendelkeznek nyílt repó-szintű licenccel, ezért NEM kerülnek
+bemásolásra. Az install-skills.sh telepítéskor a felhasználó gépére klónozza őket
+közvetlenül az eredeti repóból — ez a repó nem osztja újra a tartalmukat.
+
+- Anthropic — Claude skills:   https://github.com/anthropics/skills
+- OpenAI — skills:             https://github.com/openai/skills
+- Notion — Claude Code plugin: https://github.com/makenotion/claude-code-notion-plugin
+- Vercel — agent-skills:       https://github.com/vercel-labs/agent-skills
+
+A telepített külső skillekre az eredeti szerzőjük licence (illetve licenc hiányában
+a szerzői joguk) vonatkozik.
