@@ -31,6 +31,7 @@ trap 'rm -rf "$TMP_ROOT"' EXIT
 grep -E '^\s*vendored\s*\|' "$SRC_CONF" | while IFS='|' read -r mode id repo ref from to; do
   id="$(echo "$id" | xargs)"; repo="$(echo "$repo" | xargs)"; ref="$(echo "$ref" | xargs)"
   from="$(echo "$from" | xargs)"; to="$(echo "$to" | xargs)"
+  [ "$from" = "." ] && from=""   # gyökér-szintű SKILL.md: a 'from' lehet üres VAGY "."
   clone="$TMP_ROOT/$id"
   if [ ! -d "$clone" ]; then
     echo "→ [$id] klónozás: $repo ($ref)"

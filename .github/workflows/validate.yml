@@ -35,4 +35,16 @@ jobs:
             fi
           done < <(find . -name SKILL.md -not -path '*/.git/*' -not -path './.external/*')
           echo "Ellenőrzött SKILL.md: $count"
+
+          # Duplikált skill-mappanevek: a symlinkek (~/.claude/skills) LAPOS névteret
+          # használnak (basename), így két azonos nevű skill-mappa némán felülírná
+          # egymást telepítéskor. Ezt hibának tekintjük.
+          dups="$(find . -name SKILL.md -not -path '*/.git/*' -not -path './.external/*' \
+            | sed -E 's#.*/([^/]+)/SKILL.md#\1#' | sort | uniq -d)"
+          if [ -n "$dups" ]; then
+            echo "✗ Duplikált skill-mappanevek (lapos symlink-névtér ütközés):"
+            printf '  %s\n' $dups
+            fail=1
+          fi
+
           exit $fail
