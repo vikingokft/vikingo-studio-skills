@@ -40,6 +40,11 @@ BEMÁSOLT (vendored) FORRÁSOK
    Licenc:  MIT
    Mappa:   web/
 
+6. yfe404 — web-scraper (intelligens web scraping + Apify Actor)
+   Repo:    https://github.com/yfe404/web-scraper
+   Licenc:  MIT
+   Mappa:   web/
+
 Az Apache-2.0 licencű forrásoknál a NOTICE-megőrzési kötelezettség e fájllal
 teljesül; a teljes licenc-szöveg az upstream repókban érhető el.
 

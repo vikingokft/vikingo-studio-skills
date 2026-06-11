@@ -58,6 +58,7 @@ git pull && ./install-skills.sh
 | [Google Gemini](https://github.com/google-gemini/gemini-skills) | Gemini API | Apache-2.0 | `google/` |
 | [Google Workspace CLI](https://github.com/googleworkspace/cli) | Drive, Gmail, Sheets… | Apache-2.0 | `google/` |
 | [webdev frontend-security](https://github.com/schalkneethling/webdev-agent-skills) | frontend biztonság | MIT | `web/` |
+| [web-scraper (yfe404)](https://github.com/yfe404/web-scraper) | web scraping, Apify Actor | MIT | `web/` |
 
 ### Külső (external) — telepítéskor húzva
 
