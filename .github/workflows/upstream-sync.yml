@@ -18,6 +18,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write          # hiba esetén értesítő issue nyitása/frissítése
 
 concurrency:
   group: upstream-sync
@@ -95,5 +96,45 @@ jobs:
             num="$existing"
           fi
 
-          # High-trust auto-merge: a validate check zöldje után mergel.
-          gh pr merge "$num" --auto --squash || echo "Auto-merge nem engedélyezett a repón — a PR kézi merge-re vár."
+          # Supply-chain szűrő: a vendored skillek az agentnek szóló UTASÍTÁSOK, ezért
+          # a beérkező diffet gyanús minták (kód-letöltés-futtatás, base64, eval, reverse
+          # shell, rm -rf /…) szempontjából átnézzük. Ha gyanús, NEM auto-mergelünk:
+          # a PR nyitva marad kézi review-ra, és figyelmeztető komment kerül rá.
+          added="$(git diff origin/main...HEAD | grep '^+' | grep -v '^+++' || true)"
+          susp_re='curl[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(ba)?sh|wget[^|]*\|[[:space:]]*(ba)?sh|base64[[:space:]]+(-d|--decode)|eval[[:space:]]*[("'"'"'$]|:\(\)[[:space:]]*\{|rm[[:space:]]+-rf[[:space:]]+[~/]|nc[[:space:]]+.*-e'
+          if printf '%s' "$added" | grep -Eiq "$susp_re"; then
+            {
+              echo "⚠️ **Supply-chain szűrő: gyanús mintát találtam a beérkező diffben.**"
+              echo
+              echo "Az auto-merge **letiltva** ennél a PR-nél, kézi review szükséges. Érintett sorok:"
+              echo '```'
+              printf '%s\n' "$added" | grep -Ei "$susp_re" | head -20
+              echo '```'
+            } > /tmp/sec-comment.md
+            gh pr comment "$num" --body-file /tmp/sec-comment.md || true
+            echo "::warning::Supply-chain szűrő gyanús mintát talált — auto-merge kihagyva, kézi review kell (PR #$num)."
+          else
+            # High-trust auto-merge: a validate check zöldje után mergel.
+            gh pr merge "$num" --auto --squash || echo "Auto-merge nem engedélyezett a repón — a PR kézi merge-re vár."
+          fi
+
+      - name: Hibaértesítés (issue nyitása/frissítése)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          title="🔴 Upstream sync hiba"
+          body="A napi upstream-sync workflow **elhasalt**.
+
+          Futás: $RUN_URL
+
+          Gyakori okok: az org/repo visszavonta az Actions PR-create jogot (állítsd be a \`SYNC_PAT\` secretet biztosítéknak), vagy az upstream klónozás bukott. A logban a részletek."
+          existing="$(gh issue list --state open --search "in:title $title" --json number,title \
+            --jq ".[] | select(.title==\"$title\") | .number" | head -1 || true)"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Újabb hibás futás: $RUN_URL"
+          else
+            gh issue create --title "$title" --body "$body" || echo "Issue nyitás sikertelen (jogosultság?)."
+          fi
