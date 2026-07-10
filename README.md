@@ -48,6 +48,14 @@ git pull && ./install-skills.sh
 
 ## Források
 
+### Saját skillek — a Vikingo Stúdió sajátjai
+
+| Skill | Terület | Mappa |
+|---|---|---|
+| `vikingo-szabvany` | Vikingo plugin- és repo-szabvány: elnevezések, header, struktúra, release, checklist | `vikingo/` |
+
+Ezek kézzel karbantartott skillek, nem a napi szinkron hozza őket. Módosításuk PR-rel történik.
+
 ### Bemásolt (vendored) — nyílt licenc
 
 | Forrás | Terület | Licenc | Mappa |

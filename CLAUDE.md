@@ -4,7 +4,9 @@
 
 A Vikingo Stúdió **kurált agent-skill gyűjteménye** Claude Code-hoz. Több megbízható
 upstream forrásból válogat össze skilleket egy helyre, és naprakészen tartja őket.
-NEM saját skilleket fejleszt: aggregál és kurál.
+Emellett egyetlen SAJÁT domain van, a `vikingo/`: itt élnek a Vikingo Stúdió saját,
+kézzel karbantartott skilljei (pl. a plugin- és repo-szabvány). A `vikingo/` NEM
+szerepel a sources.conf-ban, a napi sync nem nyúl hozzá; kézzel, PR-rel módosítjuk.
 
 ## A hibrid modell (ezt értsd meg először)
 
@@ -32,6 +34,8 @@ vikingo-studio-skills/
 │   ├── upstream-sync.yml    — NAPI sync → PR → high-trust auto-merge
 │   └── validate.yml         — SKILL.md frontmatter lint (required check)
 ├── licenses/               — a vendored források LICENSE-ei (Apache/MIT megőrzés)
+├── vikingo/                — SAJÁT skillek (vikingo-szabvany), nem synceljük
+│                             kézzel karbantartott, PR-rel módosul
 ├── wordpress/ woocommerce/ jet-engine/ plugin-scaffold/ wp-rocket/
 │                           — vendored: WordPress készlet (Lonsdale201/wp-agent-skills)
 ├── payments/               — vendored: Stripe
@@ -58,9 +62,11 @@ Pipe-elválasztott sorok: `mode | id | repo | ref | from | to`
 
 ## Konvenciók
 
-- A skillek **angolul** maradnak (1:1 upstream); a `SKILL.md` az agentnek szóló utasítás,
-  a Claude akkor is magyarul válaszol, ha magyarul kérsz. Csak a repó-szintű dokumentáció
-  (README, INSTALL, CLAUDE.md, CHANGELOG) magyar.
+- Az upstream skillek **angolul** maradnak (1:1 upstream); a `SKILL.md` az agentnek szóló
+  utasítás, a Claude akkor is magyarul válaszol, ha magyarul kérsz. Csak a repó-szintű
+  dokumentáció (README, INSTALL, CLAUDE.md, CHANGELOG) magyar.
+- A saját `vikingo/` skillek törzse magyar (a szabvány maga magyar dokumentum), de a
+  frontmatter `description` angol, mert a skill-kiválasztás arra illeszt.
 - A felhasználói szövegekben **nincs em-dash (—)**; helyette vessző + kötőszó, kettőspont
   vagy zárójel. Kódkommentben/CLAUDE.md-ben OK.
 - Stílus: tegező, közvetlen.
