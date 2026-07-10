@@ -42,6 +42,10 @@ A repo neve mindig két dolgot mond meg: a prefix azt, hogy **mi az artefakt**, 
 
 Slug szabály: kisbetű, kebab-case, ékezet nélkül, tömör és beszédes. Pont és egyéb írásjel nem szerepelhet a repo nevében. Példa: "Fegyvertár hozzáférés" lesz `fegyvertar-access`.
 
+Termék-névtér: ha egy repo egy konkrét termékhez tartozik (például a Fegyvertárhoz), a slug a termék nevével kezdődik a típus-előtag után: `tool-fegyvertar-{funkció}`, `skill-fegyvertar-{funkció}`. Így típuson belül a termék repói egymás mellé rendeződnek. Emellett a repo megkapja a termék GitHub topicját (`fegyvertar`), így az org repólistája egy kattintással szűrhető a teljes termék-családra, típustól függetlenül.
+
+Láthatóság: `tool-` repo mindig privát. `app-`, `edu-` és `skill-` lehet publikus, kliens- és termék-repo (`wp-plugin-`, `site-`) alapból privát.
+
 Kód-könyvtárak (npm csomagok), sablonok és tudásbázis repók besorolása még nyitott döntés, addig a meglévő, beszédes nevük marad.
 
 ## 3. Plugin elnevezési konvenciók
