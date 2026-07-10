@@ -37,8 +37,12 @@ A repo neve mindig két dolgot mond meg: a prefix azt, hogy **mi az artefakt**, 
 | `tool-{slug}` | belső eszköz, automatizmus | `*.vikingodev.hu` |
 | `site-{slug}` | teljes kliens weboldal projekt | kliens domain |
 | `skill-{slug}` | Claude Code skill | repo, nem deploy |
+| `chrome-ext-{slug}` | Chrome bővítmény | Chrome Web Store |
+| `edu-{slug}` | oktatási segédanyag, kurzus tartalom, mintamegoldás | repo vagy GitHub Pages |
 
-Slug szabály: kisbetű, kebab-case, ékezet nélkül, tömör és beszédes. Példa: "Fegyvertár hozzáférés" lesz `fegyvertar-access`.
+Slug szabály: kisbetű, kebab-case, ékezet nélkül, tömör és beszédes. Pont és egyéb írásjel nem szerepelhet a repo nevében. Példa: "Fegyvertár hozzáférés" lesz `fegyvertar-access`.
+
+Kód-könyvtárak (npm csomagok), sablonok és tudásbázis repók besorolása még nyitott döntés, addig a meglévő, beszédes nevük marad.
 
 ## 3. Plugin elnevezési konvenciók
 
