@@ -38,8 +38,11 @@ A repo neve mindig két dolgot mond meg: a prefix azt, hogy **mi az artefakt**, 
 | `skill-{slug}` | Claude Code skill | repo, nem deploy |
 | `chrome-ext-{slug}` | Chrome bővítmény | Chrome Web Store |
 | `edu-{slug}` | oktatási segédanyag, kurzus tartalom, mintamegoldás | repo vagy GitHub Pages |
+| `archive-{slug}` | lezárt, már nem használt repo | nincs, archiválva |
 
 Slug szabály: kisbetű, kebab-case, ékezet nélkül, tömör és beszédes. Pont és egyéb írásjel nem szerepelhet a repo nevében. Példa: "Fegyvertár hozzáférés" lesz `fegyvertar-access`.
+
+Archiválási szabály: ha egy repo lezárult és már nem használjuk, átnevezéskor `archive-` előtagot kap (`archive-{régi-név}`), majd a GitHubon archiválva lesz. Így a listában ránézésre elkülönül az élő állománytól.
 
 Site szabály: minden élő weboldal és webapp repója `site-{domain}` nevű, ahol a domain kötőjelesen írva szerepel: `site-onlinesorsolas-hu` az onlinesorsolas.hu-hoz, `site-elcs-wpkurzus-hu` az elcs.wpkurzus.hu-hoz. Így a repo nevéből azonnal látszik, hol él az oldal. Külön `app-` kategória nincs.
 
