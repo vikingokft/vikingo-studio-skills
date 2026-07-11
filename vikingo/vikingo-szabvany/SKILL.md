@@ -95,7 +95,7 @@ Minden plugin fő fájlának ez a fejléce, kitöltve. Em-dash sehol, a leírás
 <?php
 /**
  * Plugin Name:       Vikingo Fegyvertár Access
- * Plugin URI:        https://vikingo.studio/pluginek/fegyvertar-access
+ * Plugin URI:        https://vikingo.studio
  * Description:       Fegyvertár hozzáférés-kezelés Circle és Stripe alapon.
  * Version:           1.0.0
  * Requires at least: 6.4
@@ -114,7 +114,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ```
 
-- Az **Author** mindig `Vikingo Studio`, az **Author URI** mindig `https://vikingo.studio`.
+- Az **Author** mindig `Vikingo Studio`, az **Author URI** és a **Plugin URI** mindig `https://vikingo.studio`, aloldal nélkül.
 - A **License** GPL-2.0-or-later, ez nem opció, privát pluginnél is így csináljuk.
 - A **Text Domain** kötelezően azonos a plugin sluggal és a mappanévvel.
 - Az **Update URI** azért kell, hogy a wp.org frissítő soha ne toljon rá egy azonos slugú publikus plugint.
