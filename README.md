@@ -1,11 +1,11 @@
 # vikingo-studio-skills
 
-A Vikingo Stúdió kurált **agent-skill** gyűjteménye Claude Code-hoz: több megbízható
+A Vikingo Studio kurált **agent-skill** gyűjteménye Claude Code-hoz: több megbízható
 forrásból összeválogatott skillek egy helyen, naprakészen.
 
 Egy skill egy specializált tudás-csomag, amit a Claude Code automatikusan előhúz,
 amikor releváns (pl. WordPress/WooCommerce fejlesztés, Stripe-integráció, biztonsági
-audit, dizájn-generálás). Ez a repó a Vikingo Stúdió **egyetlen** skill-forrása:
+audit, dizájn-generálás). Ez a repó a Vikingo Studio **egyetlen** skill-forrása:
 a WordPress készlet és az általános dev/SaaS skillek is itt élnek.
 
 ---
@@ -48,11 +48,12 @@ git pull && ./install-skills.sh
 
 ## Források
 
-### Saját skillek — a Vikingo Stúdió sajátjai
+### Saját skillek — a Vikingo Studio sajátjai
 
 | Skill | Terület | Mappa |
 |---|---|---|
 | `vikingo-szabvany` | Vikingo plugin- és repo-szabvány: elnevezések, header, struktúra, release, checklist | `vikingo/` |
+| `vikingo-stilus` | Vikingo házi stílus: magyar hangnem, helyesírás, terminológia, üzenet-minták, i18n technika | `vikingo/` |
 
 Ezek kézzel karbantartott skillek, nem a napi szinkron hozza őket. Módosításuk PR-rel történik.
 

@@ -5,6 +5,10 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 ## [Unreleased]
 
 ### Added
+- **`vikingo-stilus` skill:** a Vikingo házi stílusa minden magyar felhasználói szöveghez:
+  tegező hangnem, helyesírási és tipográfiai szabályok, terminológia-szótár,
+  üzenet-minták, magyar forrás-stringek fordítható függvényben (i18n technika).
+  Saját skill névszabály: minden saját skill neve `vikingo-` kezdetű.
 - **Saját skill domain (`vikingo/`):** az első saját skill a `vikingo-szabvany`, a
   Vikingo plugin- és repo-szabvány. A mappa nincs a sources.conf-ban, a napi sync
   nem érinti, kézzel, PR-rel módosul.
@@ -21,7 +25,7 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 - **WordPress készlet egyesítése:** a `Lonsdale201/wp-agent-skills` (MIT) 5 megtartott
   domainje (wordpress, woocommerce, jet-engine, plugin-scaffold, wp-rocket = 62 skill)
   bemásolva. Ezzel a `vikingokft/wp-agent-skills` fork nyugdíjazható: ez a repó lett a
-  Vikingo Stúdió egyetlen skill-forrása (összesen 178 vendored skill).
+  Vikingo Studio egyetlen skill-forrása (összesen 178 vendored skill).
 - A `sync-upstream.sh` egy repót csak egyszer klónoz akkor is, ha több domaint hoz belőle
   (azonos `id` a sources.conf-ban).
 - Induló kiadás: multi-source kurátor a vikingo-studio-skills repóhoz.
