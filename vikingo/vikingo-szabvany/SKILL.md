@@ -13,6 +13,22 @@ Ez a dokumentum minden Vikingo Studio által fejlesztett WordPress bővítmény 
 - Minden általunk fejlesztett plugin szerzője **Vikingo Studio**, függetlenül attól, hogy melyik kliensnek készül.
 - Kevesebb kód, kevesebb asset, kevesebb hibalehetőség. A natív WordPress megoldás mindig előrébb való a sajátnál, ha a natív elég jó.
 
+## 0.1. Elsőbbség: ütközésnél ez a szabvány nyer
+
+Az általános WordPress skillek (plugin-scaffold, wordpress, woocommerce készletek) technikai tudását HASZNÁLD (hookok, cron, életciklus, biztonság, teljesítmény), de ahol a példáik vagy konvencióik ellentmondanak ennek a szabványnak, ott MINDIG ez a szabvány érvényes. Az általános skill csak ott ad döntést, ahol ez a dokumentum hallgat.
+
+A tipikus ütközések és a Vikingo döntés:
+
+| Általános skill mondja | Vikingo szabvány szerint |
+|---|---|
+| `includes/` mappa a PHP osztályoknak | `src/` mappa, PSR-4 autoload, `Vikingo\{PluginNév}` namespace |
+| generikus `yourprefix_`, `my_plugin_` prefixek | `vk_{plugin}_` a 3. pont táblázata szerint |
+| angol forrás-stringek + fordítási fájl | magyar forrás-stringek fordítható függvényben (10. pont, vikingo-stilus skill) |
+| tetszőleges plugin header | a 4. pont kötelező fejléce (Author: Vikingo Studio, GPL-2.0-or-later) |
+| saját admin design | natív-first admin a 7. pont szerint |
+
+Egy kivétel jogos az i18n-nél: a WP 6.7+ betöltés előtti (bootstrap-fázisú) hibaüzenetek nem mehetnek fordítási függvénybe; ezek nálunk nyers magyar stringek, nem angolok.
+
 ## 1. Domainek és szerepük
 
 | Domain | Szerep |
