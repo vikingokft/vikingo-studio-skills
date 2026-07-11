@@ -85,12 +85,11 @@ jobs:
 
           existing=$(gh pr list --head "$SYNC_BRANCH" --base main --state open --json number --jq '.[0].number' || true)
           if [ -z "$existing" ]; then
-            num=$(gh pr create --base main --head "$SYNC_BRANCH" \
+            gh pr create --base main --head "$SYNC_BRANCH" \
               --title "Upstream sync: vendored források frissültek" \
-              --body-file /tmp/pr-body.md --json number --jq .number 2>/dev/null \
-              || gh pr create --base main --head "$SYNC_BRANCH" \
-                 --title "Upstream sync: vendored források frissültek" \
-                 --body-file /tmp/pr-body.md)
+              --body-file /tmp/pr-body.md
+            # Miért listázással: a gh pr create nem támogat --json kimenetet.
+            num=$(gh pr list --head "$SYNC_BRANCH" --base main --state open --json number --jq '.[0].number')
           else
             gh pr edit "$existing" --body-file /tmp/pr-body.md
             num="$existing"

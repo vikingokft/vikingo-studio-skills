@@ -102,11 +102,19 @@ Pipe-elválasztott sorok: `mode | id | repo | ref | from | to`
 
 ## Egyesített készlet — ez az egyetlen forrás
 
-Ez a repó a Vikingo Stúdió EGYETLEN skill-gyűjteménye. A korábbi `vikingokft/wp-agent-skills`
-fork helyett a WordPress készletet közvetlenül a `Lonsdale201/wp-agent-skills` upstreamből
-húzzuk (MIT), a megtartott 5 domainnel (`wordpress`, `woocommerce`, `jet-engine`,
-`plugin-scaffold`, `wp-rocket`). A `vikingokft/wp-agent-skills` fork ezzel nyugdíjazható
-(archiválható), mert a tartalma ide került.
+Ez a repó a Vikingo Stúdió EGYETLEN skill-gyűjteménye. A WordPress készletet közvetlenül a
+`Lonsdale201/wp-agent-skills` upstreamből húzzuk (MIT), a megtartott 5 domainnel
+(`wordpress`, `woocommerce`, `jet-engine`, `plugin-scaffold`, `wp-rocket`). A korábbi
+`vikingokft/wp-agent-skills` fork 2026-07-10-én TÖRÖLVE lett, a tartalma ide került.
+
+## Tudott korlátok
+
+- A `sync-upstream.sh` a bemásolást frissíti, de NEM törli azokat a skilleket, amiket az
+  upstream időközben eltávolított. Az ilyen zombikat kézzel kell kigyomlálni (a napi sync
+  PR diffjéből látszik, ha egy upstream nagyot változott).
+- A `validate` workflow csak a repóba bemásolt skilleket látja; az external forrásokból
+  telepítéskor jövő skillek névütközését nem tudja előre jelezni. Ezt az
+  `install-skills.sh` figyelmeztetése fogja meg a felhasználó gépén.
 
 ## Kapcsolódó repó
 
