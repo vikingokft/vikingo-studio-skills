@@ -23,8 +23,16 @@ SRC_CONF="$REPO/sources.conf"
 mkdir -p "$SKILLS_DIR"
 
 link_skill() {  # $1 = skill könyvtár
-  local skill_dir="$1" name
+  local skill_dir="$1" name existing
   name="$(basename "$skill_dir")"
+  # Miért: a symlink-névtér lapos, két azonos nevű skill némán felülírná egymást.
+  # Ütközésnél szólunk, hogy látszódjon, melyik forrás nyert.
+  if [ -L "$SKILLS_DIR/$name" ] && [ -e "$SKILLS_DIR/$name" ]; then
+    existing="$(readlink "$SKILLS_DIR/$name")"
+    if [ "$existing" != "$skill_dir" ]; then
+      echo "  ⚠ névütközés: $name — eddig: $existing, most erre áll át: $skill_dir"
+    fi
+  fi
   ln -sfn "$skill_dir" "$SKILLS_DIR/$name"
 }
 
@@ -61,5 +69,22 @@ if [ -f "$SRC_CONF" ]; then
     echo "  ✓ $ext external skill symlinkelve ($id)"
   done
 fi
+
+# 3) Takarítás: az ebből a repóból (vagy a klónjaiból) származó, de célt vesztett
+# symlinkek eltávolítása. Miért: átnevezett vagy törölt skill után ne maradjon
+# eltört link, ami a Claude Code-ot zavarná.
+removed=0
+for link in "$SKILLS_DIR"/*; do
+  [ -L "$link" ] || continue
+  case "$(readlink "$link")" in
+    "$REPO"/*)
+      if [ ! -e "$link" ]; then
+        rm "$link"
+        removed=$((removed + 1))
+      fi
+      ;;
+  esac
+done
+[ "$removed" -gt 0 ] && echo "→ $removed eltört symlink eltávolítva"
 
 echo "✓ Kész → $SKILLS_DIR"
