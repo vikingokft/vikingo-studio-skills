@@ -33,14 +33,22 @@ A repo neve mindig két dolgot mond meg: a prefix azt, hogy **mi az artefakt**, 
 | `wp-plugin-{slug}` | WordPress bővítmény | kliens oldal vagy Fegyvertár |
 | `wp-mu-{slug}` | must-use plugin, snippet-fix | eseti |
 | `wp-theme-{slug}` | egyedi téma vagy child theme | kliens oldal |
-| `app-{slug}` | önálló, nyilvános alkalmazás | `*.vikingoapp.hu` |
 | `tool-{slug}` | belső eszköz, automatizmus | `*.vikingodev.hu` |
-| `site-{slug}` | teljes kliens weboldal projekt | kliens domain |
+| `site-{domain}` | élő weboldal vagy webapp, a slug maga a domain | a névben szereplő domain |
 | `skill-{slug}` | Claude Code skill | repo, nem deploy |
 | `chrome-ext-{slug}` | Chrome bővítmény | Chrome Web Store |
 | `edu-{slug}` | oktatási segédanyag, kurzus tartalom, mintamegoldás | repo vagy GitHub Pages |
+| `archive-{slug}` | lezárt, már nem használt repo | nincs, archiválva |
 
 Slug szabály: kisbetű, kebab-case, ékezet nélkül, tömör és beszédes. Pont és egyéb írásjel nem szerepelhet a repo nevében. Példa: "Fegyvertár hozzáférés" lesz `fegyvertar-access`.
+
+Archiválási szabály: ha egy repo lezárult és már nem használjuk, átnevezéskor `archive-` előtagot kap (`archive-{régi-név}`), majd a GitHubon archiválva lesz. Így a listában ránézésre elkülönül az élő állománytól.
+
+Site szabály: minden élő weboldal és webapp repója `site-{domain}` nevű, ahol a domain kötőjelesen írva szerepel: `site-onlinesorsolas-hu` az onlinesorsolas.hu-hoz, `site-elcs-wpkurzus-hu` az elcs.wpkurzus.hu-hoz. Így a repo nevéből azonnal látszik, hol él az oldal. Külön `app-` kategória nincs.
+
+Termék-névtér: ha egy repo egy konkrét termékhez tartozik (például a Fegyvertárhoz), a slug a termék nevével kezdődik a típus-előtag után: `tool-fegyvertar-{funkció}`, `skill-fegyvertar-{funkció}`. Így típuson belül a termék repói egymás mellé rendeződnek. Emellett a repo megkapja a termék GitHub topicját (`fegyvertar`), így az org repólistája egy kattintással szűrhető a teljes termék-családra, típustól függetlenül.
+
+Láthatóság: `tool-` repo mindig privát. `edu-` és `skill-` lehet publikus, kliens- és termék-repo (`wp-plugin-`, `site-`) alapból privát.
 
 Kód-könyvtárak (npm csomagok), sablonok és tudásbázis repók besorolása még nyitott döntés, addig a meglévő, beszédes nevük marad.
 
@@ -87,7 +95,7 @@ Minden plugin fő fájlának ez a fejléce, kitöltve. Em-dash sehol, a leírás
 <?php
 /**
  * Plugin Name:       Vikingo Fegyvertár Access
- * Plugin URI:        https://vikingo.studio/pluginek/fegyvertar-access
+ * Plugin URI:        https://vikingo.studio
  * Description:       Fegyvertár hozzáférés-kezelés Circle és Stripe alapon.
  * Version:           1.0.0
  * Requires at least: 6.4
@@ -106,7 +114,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ```
 
-- Az **Author** mindig `Vikingo Studio`, az **Author URI** mindig `https://vikingo.studio`.
+- Az **Author** mindig `Vikingo Studio`, az **Author URI** és a **Plugin URI** mindig `https://vikingo.studio`, aloldal nélkül.
 - A **License** GPL-2.0-or-later, ez nem opció, privát pluginnél is így csináljuk.
 - A **Text Domain** kötelezően azonos a plugin sluggal és a mappanévvel.
 - Az **Update URI** azért kell, hogy a wp.org frissítő soha ne toljon rá egy azonos slugú publikus plugint.
