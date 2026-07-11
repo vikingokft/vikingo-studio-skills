@@ -204,17 +204,27 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
 } );
 ```
 
-Arculati konstansok egy helyen, a konkrét értékeket a hivatalos Vikingo arculatból kell kitölteni:
+Az arculat forrása a **vikingo-design-system** repo (`packages/ui/src/styles/tokens.css`), az az egyetlen igazság-forrás. A WordPress pluginekbe ebből CSAK az alábbi, származtatott token-részhalmaz kerül át, bemásolva a plugin admin CSS-ébe (nincs külső kérés, nincs npm függőség, kb. fél kilobájt). A React és web-component réteg, a sidebar komponensek és a brand fontok NEM jönnek át; a komponensek a natív WP admin elemek, csak a színüket és a rádiuszt kapják a tokenekből.
 
 ```css
+/* Vikingo admin tokenek. Származtatva: vikingo-design-system
+   packages/ui/src/styles/tokens.css. Arculatváltásnál ott a teljes
+   készlet, itt ez a részhalmaz frissül. */
 :root .vk-admin {
-	--vk-color-primary: #___;   /* coral */
-	--vk-color-accent:  #___;   /* aubergine */
-	--vk-radius: 8px;
+	--vk-color-primary:       #FF544D; /* korall */
+	--vk-color-primary-hover: #E83D36;
+	--vk-color-accent:        #3E2E45; /* padlizsán */
+	--vk-color-bg:            #F6EFE8; /* bézs */
+	--vk-color-surface:       #FFFFFF;
+	--vk-color-border:        #E0D9D1;
+	--vk-color-text-muted:    #7A6A82;
+	--vk-radius:              8px;
 }
 ```
 
-Az arculati elemek egységesek minden pluginben, ugyanaz a logó, ugyanaz a két szín, ugyanaz a szerzői link. A plugin listában a support és dokumentáció linket a `plugin_row_meta` szűrővel adjuk hozzá, mindig a `vikingo.studio` alá mutatva.
+Ennél több token pluginbe nem kerül. Ha egy plugin frontend felülete (felhasználónak látszó widget) többet igényel, ott is a design system tokenjeit használjuk, de csak a ténylegesen használt sorokat másoljuk át, buildelt CSS-ként.
+
+Az arculati elemek egységesek minden pluginben, ugyanaz a logó (a design system repo `vikingo-emblema-*.svg` fájljai inline SVG-ként), ugyanaz a színvilág, ugyanaz a szerzői link. A plugin listában a support és dokumentáció linket a `plugin_row_meta` szűrővel adjuk hozzá, mindig a `vikingo.studio` alá mutatva.
 
 ## 8. Biztonsági alapkövetelmények
 
