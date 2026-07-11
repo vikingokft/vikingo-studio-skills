@@ -216,11 +216,12 @@ Az arculati elemek egységesek minden pluginben, ugyanaz a logó, ugyanaz a két
 - Asset verziózás a plugin verzió konstanssal a cache-buster miatt, fejlesztés alatt `filemtime`.
 - Külső PHP könyvtárat composerrel prefixelve szállítunk (PHP-Scoper vagy Mozart), hogy két plugin ne ütközzön ugyanazon a verzión.
 
-## 10. Fordíthatóság
+## 10. Fordíthatóság és szövegek
 
-- Minden felhasználónak látható szöveg fordítható: `__()`, `esc_html__()`.
+- A forrás-szövegeket magyarul írjuk, de minden felhasználónak látható szöveg fordítható függvényben áll: `__()`, `esc_html__()`. Így a plugin bármikor fordíthatóvá válik a kód átírása nélkül.
 - A text domain mindig a plugin slug, a betöltés az `init` hookon.
 - POT fájl a `languages/` mappában.
+- A szövegek hangneme, helyesírása és terminológiája a **vikingo-stilus** skillben van szabályozva (tegező hangnem, magyar tipográfia, egységes szótár, üzenet-minták). Minden felületi szöveg aszerint készül.
 
 ## 11. Kód-konvenciók
 
