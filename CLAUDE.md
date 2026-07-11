@@ -74,6 +74,11 @@ Pipe-elválasztott sorok: `mode | id | repo | ref | from | to`
   vagy zárójel. Kódkommentben/CLAUDE.md-ben OK.
 - Stílus: tegező, közvetlen.
 - Ellipsis: `…` (egyetlen karakter), nem `...`.
+- **Elsőbbség ütközésnél:** az upstream skillek generikus konvenciói (pl. `includes/`
+  mappa, angol forrás-stringek, `yourprefix_`) ütközhetnek a Vikingo szabvánnyal. Az
+  upstream skilleket NEM szerkesztjük (a sync visszaírná); helyette a saját `vikingo/`
+  skillek deklarálják, hogy ütközésnél ők nyernek, és felsorolják a tipikus eseteket.
+  Új ütközés észlelésekor a vikingo-szabvany 0.1. táblázatát kell bővíteni.
 
 ## Új forrás hozzáadása
 

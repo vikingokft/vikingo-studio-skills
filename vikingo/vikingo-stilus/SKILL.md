@@ -11,6 +11,8 @@ Ez a Vikingo Studio házi stílusa minden felhasználónak látszó magyar szöv
 
 A szöveg is termék. Ugyanolyan következetesnek kell lennie, mint a kódnak: ugyanazt a fogalmat mindig ugyanaz a szó jelöli, ugyanaz a helyzet mindig ugyanolyan szerkezetű üzenetet kap. Tömören, magyarul, helyesen.
 
+Elsőbbség: ha egy általános skill angol forrás-szövegeket vagy más hangnemet feltételez, Vikingo projektben ez a skill nyer. A forrás-szöveg magyar, a hangnem tegező.
+
 ## 1. Hangnem
 
 - **Tegező, közvetlen, tömör.** Úgy beszélünk a felhasználóval, mint egy hozzáértő kollégával: "Elmentettük a beállításaidat." Nem bratyizós és nem hivataloskodó.
