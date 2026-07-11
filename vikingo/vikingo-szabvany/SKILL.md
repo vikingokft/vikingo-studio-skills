@@ -204,21 +204,23 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
 } );
 ```
 
-Az arculat forrása a **vikingo-design-system** repo (`packages/ui/src/styles/tokens.css`), az az egyetlen igazság-forrás. A WordPress pluginekbe ebből CSAK az alábbi, származtatott token-részhalmaz kerül át, bemásolva a plugin admin CSS-ébe (nincs külső kérés, nincs npm függőség, kb. fél kilobájt). A React és web-component réteg, a sidebar komponensek és a brand fontok NEM jönnek át; a komponensek a natív WP admin elemek, csak a színüket és a rádiuszt kapják a tokenekből.
+Az arculat forrása a **Vikingo Design System** (Claude Designnal épített rendszer, `colors_and_type.css`), az az egyetlen igazság-forrás. A WordPress pluginekbe ebből CSAK az alábbi, származtatott token-részhalmaz kerül át, bemásolva a plugin admin CSS-ébe (nincs külső kérés, nincs npm függőség, kb. fél kilobájt). A React és web-component réteg, az illusztrációs színpaletta és a brand fontok (Clash Display, DM Mono) NEM jönnek át; a komponensek a natív WP admin elemek, csak a színüket és a rádiuszt kapják a tokenekből.
 
 ```css
-/* Vikingo admin tokenek. Származtatva: vikingo-design-system
-   packages/ui/src/styles/tokens.css. Arculatváltásnál ott a teljes
-   készlet, itt ez a részhalmaz frissül. */
+/* Vikingo admin tokenek. Származtatva: Vikingo Design System,
+   colors_and_type.css. Arculatváltásnál ott a teljes készlet,
+   itt ez a részhalmaz frissül. */
 :root .vk-admin {
 	--vk-color-primary:       #FF544D; /* korall */
 	--vk-color-primary-hover: #E83D36;
-	--vk-color-accent:        #3E2E45; /* padlizsán */
-	--vk-color-bg:            #F6EFE8; /* bézs */
+	--vk-color-accent:        #3E2E45; /* padlizsán (ink) */
+	--vk-color-bg:            #F3EEEB; /* meleg krém (paper) */
 	--vk-color-surface:       #FFFFFF;
-	--vk-color-border:        #E0D9D1;
-	--vk-color-text-muted:    #7A6A82;
-	--vk-radius:              8px;
+	--vk-color-border:        #DCD0C3; /* sand */
+	--vk-color-text-muted:    #7A687F; /* mauve */
+	--vk-radius-sm:           8px;     /* mezők, kis elemek */
+	--vk-radius:              12px;    /* gombok, panelek */
+	--vk-radius-lg:           16px;    /* kártyák, nagy dobozok */
 }
 ```
 
