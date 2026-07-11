@@ -2,11 +2,14 @@
 
 ## Projekt célja
 
-A Vikingo Stúdió **kurált agent-skill gyűjteménye** Claude Code-hoz. Több megbízható
+A Vikingo Studio **kurált agent-skill gyűjteménye** Claude Code-hoz. Több megbízható
 upstream forrásból válogat össze skilleket egy helyre, és naprakészen tartja őket.
-Emellett egyetlen SAJÁT domain van, a `vikingo/`: itt élnek a Vikingo Stúdió saját,
-kézzel karbantartott skilljei (pl. a plugin- és repo-szabvány). A `vikingo/` NEM
-szerepel a sources.conf-ban, a napi sync nem nyúl hozzá; kézzel, PR-rel módosítjuk.
+Emellett egyetlen SAJÁT domain van, a `vikingo/`: itt élnek a Vikingo Studio saját,
+kézzel karbantartott skilljei (`vikingo-szabvany` = szerkezet és elnevezések,
+`vikingo-stilus` = magyar nyelv és hangnem). A `vikingo/` NEM szerepel a
+sources.conf-ban, a napi sync nem nyúl hozzá; kézzel, PR-rel módosítjuk.
+Minden saját skill neve kötelezően `vikingo-` kezdetű, így a külső forrásokkal
+sosem ütközik, és a lapos symlink-névtérben ránézésre látszik, melyik a miénk.
 
 ## A hibrid modell (ezt értsd meg először)
 
@@ -102,7 +105,7 @@ Pipe-elválasztott sorok: `mode | id | repo | ref | from | to`
 
 ## Egyesített készlet — ez az egyetlen forrás
 
-Ez a repó a Vikingo Stúdió EGYETLEN skill-gyűjteménye. A WordPress készletet közvetlenül a
+Ez a repó a Vikingo Studio EGYETLEN skill-gyűjteménye. A WordPress készletet közvetlenül a
 `Lonsdale201/wp-agent-skills` upstreamből húzzuk (MIT), a megtartott 5 domainnel
 (`wordpress`, `woocommerce`, `jet-engine`, `plugin-scaffold`, `wp-rocket`). A korábbi
 `vikingokft/wp-agent-skills` fork 2026-07-10-én TÖRÖLVE lett, a tartalma ide került.

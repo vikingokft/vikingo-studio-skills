@@ -1,6 +1,6 @@
 # Telepítés
 
-Ez az útmutató mindenkinek szól, aki használni szeretné a Vikingo Stúdió
+Ez az útmutató mindenkinek szól, aki használni szeretné a Vikingo Studio
 `vikingo-studio-skills` csomagját Claude Code-ban (CLI vagy VS Code / JetBrains).
 
 A teljes folyamat **kb. 2 perc**, három paranccsal.
