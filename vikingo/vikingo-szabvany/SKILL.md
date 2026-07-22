@@ -188,6 +188,8 @@ A privát pluginek frissítése **egységesen a vikingoauth.hu proxyn** kereszt�
 
 Referencia-implementáció, amiből másolni kell: `vikingo-backup` és `wp-plugin-vikingo-woocommerce` `src/Update/UpdateChecker.php`. Új pluginnál ezt az osztályt kell átemelni, a `SLUG`, `HOST`, `ENDPOINT` és a szöveges nevek átírásával; a bearer kulcs változatlan.
 
+**„Frissítés keresése" gomb (ajánlott).** A plugin saját beállítási oldalán (pl. Eszközök fül) legyen egy gomb, ami azonnal lekérdezi a csatornát, hogy friss kiadás után ne kelljen a WP frissítési cron/cache lejártát (6–12 óra) kivárni. A minta: az `UpdateChecker` egy `force_check()` metódusa üríti a saját metaadat-transientet, meghívja a `wp_update_plugins()`-t (hogy a Bővítmények oldal is frissüljön), és visszaadja az aktuális + legfrissebb verziót; a beállítási oldal egy nonce-olt `admin-post` művelettel hívja, majd értesítésben jelzi az eredményt (új verzió elérhető / naprakész / a csatorna nem válaszolt). A gomb az `UpdateChecker`-t használja, nem duplikálja a proxy-hívást; a tényleges telepítés marad a Bővítmények oldalon. Referencia: `wp-plugin-vikingo-woocommerce` (`UpdateChecker::force_check()` + a beállítási oldal Eszközök füle).
+
 **Szerver oldal (vikingo-auth-server, Cloudflare Worker a `vikingoauth.hu`-n).** A `/plugin/update` és `/plugin/download` endpoint a `src/routes/plugin.ts` `PLUGINS` whitelistjéből dolgozik. Új plugin bekötése két lépés:
 
 1. Egy bejegyzés a `PLUGINS` konstansba: `'{slug}': { repo: 'vikingokft/wp-plugin-{slug}', requires, requiresPhp, tested }`.
