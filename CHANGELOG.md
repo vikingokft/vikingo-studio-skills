@@ -10,8 +10,9 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
   `Update URI` fejléccel, `src/Update/UpdateChecker.php` osztály, könyvtár nélkül).
   A kliens oldalakra nem kell per-oldal token; a GitHub token a proxynál, egy helyen
   él. Dokumentálva a szerver-oldali bekötés (PLUGINS whitelist + `wrangler deploy`)
-  és a kritikus PAT-scope buktató (új repo hozzáadása a `vikingoauth-plugin-updates`
-  tokenhez, különben 502 `release_unavailable`). A 4. pont headerében az `Update URI`
+  A GitHub PAT „All repositories" hatókörű, így új plugin repónál nincs GitHub-oldali
+  teendő; a 502 `release_unavailable` / `github_http_404` mint token-hibakeresési tünet
+  dokumentálva. A 4. pont headerében az `Update URI`
   a proxyra mutat, a 13. pont ellenőrzőlistája a régi plugin-update-checker tétel
   helyett a proxy-beállítást kéri. Referencia: `vikingo-backup`, `vk-woocommerce`.
 - **`vikingo-stilus` skill:** a Vikingo házi stílusa minden magyar felhasználói szöveghez:

@@ -188,11 +188,14 @@ A privát pluginek frissítése **egységesen a vikingoauth.hu proxyn** kereszt�
 
 Referencia-implementáció, amiből másolni kell: `vikingo-backup` és `wp-plugin-vikingo-woocommerce` `src/Update/UpdateChecker.php`. Új pluginnál ezt az osztályt kell átemelni, a `SLUG`, `HOST`, `ENDPOINT` és a szöveges nevek átírásával; a bearer kulcs változatlan.
 
-**Szerver oldal (vikingo-auth-server, Cloudflare Worker a `vikingoauth.hu`-n).** A `/plugin/update` és `/plugin/download` endpoint a `src/routes/plugin.ts` `PLUGINS` whitelistjéből dolgozik. Új plugin bekötése:
+**Szerver oldal (vikingo-auth-server, Cloudflare Worker a `vikingoauth.hu`-n).** A `/plugin/update` és `/plugin/download` endpoint a `src/routes/plugin.ts` `PLUGINS` whitelistjéből dolgozik. Új plugin bekötése két lépés:
 
 1. Egy bejegyzés a `PLUGINS` konstansba: `'{slug}': { repo: 'vikingokft/wp-plugin-{slug}', requires, requiresPhp, tested }`.
 2. `npx wrangler deploy`.
-3. **KRITIKUS:** a szerver `GITHUB_TOKEN` fine-grained PAT-ja (`vikingoauth-plugin-updates`) repónként engedélyezett. Az új repót hozzá kell adni a PAT **Repository access** listájához, **Contents: Read-only** jogosultsággal, és ha az org kéri, jóváhagyni. Enélkül a `/plugin/update` **502 `release_unavailable`** hibát ad, az auditban `github_http_404`-gyel — mert a GitHub privát repónál jogosultsághiányra is 404-et küld, nem 403-at. A tünet független a release helyességétől.
+
+A GitHub tokennel (`GITHUB_TOKEN` Cloudflare secret, a `vikingoauth-plugin-updates` fine-grained PAT) **nem kell külön semmit csinálni**: a token **Repository access = All repositories**, Contents: Read-only hatókörű, így az org minden mostani és jövőbeli repóját automatikusan látja. Új plugin repónál tehát nincs GitHub-oldali teendő.
+
+**Hibakeresés (ha a `/plugin/update` mégis 502 `release_unavailable`-t ad):** az auditban `github_http_404` a GitHub token gondja — mert privát repónál jogosultsághiányra is 404-et küld, nem 403-at. Okok: a token elveszett/lejárt, vagy valaki visszaszűkítette „Only select repositories"-ra és kimaradt a repo, vagy rossz a resource owner (nem `vikingokft`). A tünet független a release helyességétől. Új token feltöltése: `npx wrangler secret put GITHUB_TOKEN`.
 
 Teszt kiadás után (cache-buster kell, mert a Cloudflare edge cache-elheti a korábbi választ):
 
@@ -308,5 +311,5 @@ Az arculati elemek egységesek minden pluginben, ugyanaz a logó (a design syste
 - [ ] Nincs em-dash sehol.
 - [ ] Release zip tiszta, dev függőség és node_modules nélkül.
 - [ ] `Update URI` a proxyra mutat (`https://vikingoauth.hu/plugin/{slug}`), a plugin `src/Update/UpdateChecker.php`-t tartalmazza (6.1 pont).
-- [ ] A plugin fel van véve a vikingo-auth-server `PLUGINS` whitelistjébe, a worker deployolva, és a repo hozzá van adva a `vikingoauth-plugin-updates` PAT-hoz (Contents: Read-only).
+- [ ] A plugin fel van véve a vikingo-auth-server `PLUGINS` whitelistjébe és a worker deployolva. (A GitHub PAT „All repositories" hatókörű, így új repót nem kell külön felvenni.)
 - [ ] Kiadás után a `/plugin/update?slug={slug}` HTTP 200-at ad (curl-teszt a 6.1 pont szerint).
