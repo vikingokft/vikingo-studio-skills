@@ -5,6 +5,16 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 ## [Unreleased]
 
 ### Added
+- **`vikingo-szabvany` – frissítési csatorna (6.1 pont):** a privát pluginek
+  frissítése egységesen a vikingoauth.hu proxyn keresztül megy (natív WP update
+  `Update URI` fejléccel, `src/Update/UpdateChecker.php` osztály, könyvtár nélkül).
+  A kliens oldalakra nem kell per-oldal token; a GitHub token a proxynál, egy helyen
+  él. Dokumentálva a szerver-oldali bekötés (PLUGINS whitelist + `wrangler deploy`)
+  A GitHub PAT „All repositories" hatókörű, így új plugin repónál nincs GitHub-oldali
+  teendő; a 502 `release_unavailable` / `github_http_404` mint token-hibakeresési tünet
+  dokumentálva. A 4. pont headerében az `Update URI`
+  a proxyra mutat, a 13. pont ellenőrzőlistája a régi plugin-update-checker tétel
+  helyett a proxy-beállítást kéri. Referencia: `vikingo-backup`, `vk-woocommerce`.
 - **`vikingo-stilus` skill:** a Vikingo házi stílusa minden magyar felhasználói szöveghez:
   tegező hangnem, helyesírási és tipográfiai szabályok, terminológia-szótár,
   üzenet-minták, magyar forrás-stringek fordítható függvényben (i18n technika).
