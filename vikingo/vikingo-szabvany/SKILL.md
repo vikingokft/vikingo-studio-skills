@@ -1,6 +1,6 @@
 ---
 name: vikingo-szabvany
-description: Vikingo Studio plugin and repo standard. MUST be applied whenever creating, naming, reviewing, or releasing anything for Vikingo Studio / vikingokft — WordPress plugins, themes, GitHub repos, apps, or tools. Covers repo naming taxonomy (wp-plugin-, app-, tool-, site- prefixes), plugin naming conventions (vk- prefixes for slugs, hooks, options, meta, CPTs, REST routes), the mandatory plugin header, folder structure, versioning and release flow, admin UI rules (native-first, no brand webfonts in wp-admin), security baseline, and the pre-release checklist. Triggers on Vikingo, vikingokft, vk- prefix, Fegyvertár, vikingo.hu / vikingo.studio / vikingoapp.hu / vikingodev.hu, or any new plugin/repo scaffolding for this organization.
+description: Vikingo Studio plugin and repo standard. MUST be applied whenever creating, naming, reviewing, or releasing anything for Vikingo Studio / vikingokft — WordPress plugins, themes, GitHub repos, apps, or tools. Covers repo naming taxonomy (wp-plugin-, app-, tool-, site- prefixes), plugin naming conventions (vk- prefixes for slugs, hooks, options, meta, CPTs, REST routes), the mandatory plugin header, folder structure, versioning and release flow, the private plugin update channel via the vikingoauth.hu proxy (Update URI header, no per-site token, server-side PLUGINS whitelist and GitHub PAT setup), admin UI rules (native-first, no brand webfonts in wp-admin), security baseline, and the pre-release checklist. Triggers on Vikingo, vikingokft, vk- prefix, Fegyvertár, plugin update or auto-update, vikingoauth.hu, vikingo.hu / vikingo.studio / vikingoapp.hu / vikingodev.hu, or any new plugin/repo scaffolding for this organization.
 ---
 
 # Vikingo Studio – Plugin és repo szabvány
@@ -122,7 +122,7 @@ Minden plugin fő fájlának ez a fejléce, kitöltve. Em-dash sehol, a leírás
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       vk-fegyvertar-access
  * Domain Path:       /languages
- * Update URI:        https://vikingo.studio
+ * Update URI:        https://vikingoauth.hu/plugin/vk-fegyvertar-access
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -133,7 +133,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 - Az **Author** mindig `Vikingo Studio`, az **Author URI** és a **Plugin URI** mindig `https://vikingo.studio`, aloldal nélkül.
 - A **License** GPL-2.0-or-later, ez nem opció, privát pluginnél is így csináljuk.
 - A **Text Domain** kötelezően azonos a plugin sluggal és a mappanévvel.
-- Az **Update URI** azért kell, hogy a wp.org frissítő soha ne toljon rá egy azonos slugú publikus plugint.
+- Az **Update URI** a frissítési proxyra mutat: `https://vikingoauth.hu/plugin/{plugin-slug}`. Ez egyszerre két dolgot ad: a wp.org frissítő sosem tol rá azonos slugú publikus plugint, és a WP a `update_plugins_vikingoauth.hu` filteren keresztül tőlünk kéri a frissítést (lásd 6. pont).
 - A **Requires PHP** minimum 8.0, a támogatott WP verzió az aktuális és az azt megelőző fő verzió.
 
 ## 5. Mappa- és fájlstruktúra
@@ -170,9 +170,40 @@ A fő fájl csak betölt és indít. A logika a `src/` alatt van PSR-4 autoloadd
 - A `main` mindig telepíthető állapotban van, a fejlesztés feature branchen.
 - Szemantikus verziózás, `MAJOR.MINOR.PATCH`. Minden kiadás egy git tag `v1.0.0` formában. A header `Version` és a tag mindig egyezik.
 - A `CHANGELOG.md` a Keep a Changelog formátumot követi, magyarul.
-- Kliens oldalakon a privát pluginek automatikus frissítéséhez a **plugin-update-checker** (YahnisElsts) könyvtárat használjuk, GitHub release-ekre kötve, privát repónál tokennel.
 - Release-enként tiszta, build utáni zipet töltünk fel release asset-ként, dev függőség és `node_modules` nélkül. A build GitHub Actionben fut, kézzel nem rakunk össze zipet.
 - Ha egy plugin később a Fegyvertár tagoknak megy ki, opcionálisan bekerülhet egy egyszerű licenc- vagy token-ellenőrzés. Ezt csak tényleges fizetős terjesztésnél építjük be.
+
+## 6.1. Frissítési csatorna: a vikingoauth.hu proxy
+
+A privát pluginek frissítése **egységesen a vikingoauth.hu proxyn** keresztül megy, nem közvetlenül a GitHubról. Ez a kötelező minta minden Vikingo pluginnál.
+
+**Miért így:** privát repóból a GitHub API csak tokennel ad vissza release-t. Ha ezt a tokent kliensenként kellene beírni (pl. `wp-config.php` konstansként), az sok tucat oldalon nem skálázódik, és a token szétszóródik. A proxynál a GitHub token **egyetlen központi helyen** (Cloudflare secret) él, a kliens oldalakra **semmilyen titkot nem kell beállítani**. Ez egyben megszünteti a korábbi plugin-update-checker (YahnisElsts) könyvtár igényét is: nincs vendorolt függőség, kevesebb kód, kisebb zip.
+
+**Kliens oldal (a pluginban).** Natív WP frissítés, nincs külső könyvtár:
+
+1. A plugin header `Update URI: https://vikingoauth.hu/plugin/{slug}` (4. pont). Ebből a WP a `update_plugins_vikingoauth.hu` filtert származtatja.
+2. Egy kis `src/Update/UpdateChecker.php` osztály (kb. 200 sor, könyvtár nélkül) rákötődik erre a filterre és a `plugins_api` filterre, lekéri a proxy `/plugin/update` endpointjának metadatáját (`version`, `package`, `changelog`, …), és 6 órás transientben cache-eli (hibánál 1 órás negatív cache).
+3. A közös bearer kulcs a pluginba van égetve az osztály konstansaként. **Nem per-oldal titok:** csak azt védi ki, hogy kívülálló letölthesse a zipet, azt a zipet, amit a telepített oldal amúgy is birtokol. Ugyanaz a kulcs minden Vikingo pluginban.
+4. A zipet a WP core tölti a `/plugin/download` endpointról; a bearer fejlécet a `http_request_args` filter injektálja (csak a `vikingoauth.hu` `/plugin/` útra), így a kulcs URL-be és logba sem kerül.
+
+Referencia-implementáció, amiből másolni kell: `vikingo-backup` és `wp-plugin-vikingo-woocommerce` `src/Update/UpdateChecker.php`. Új pluginnál ezt az osztályt kell átemelni, a `SLUG`, `HOST`, `ENDPOINT` és a szöveges nevek átírásával; a bearer kulcs változatlan.
+
+**Szerver oldal (vikingo-auth-server, Cloudflare Worker a `vikingoauth.hu`-n).** A `/plugin/update` és `/plugin/download` endpoint a `src/routes/plugin.ts` `PLUGINS` whitelistjéből dolgozik. Új plugin bekötése:
+
+1. Egy bejegyzés a `PLUGINS` konstansba: `'{slug}': { repo: 'vikingokft/wp-plugin-{slug}', requires, requiresPhp, tested }`.
+2. `npx wrangler deploy`.
+3. **KRITIKUS:** a szerver `GITHUB_TOKEN` fine-grained PAT-ja (`vikingoauth-plugin-updates`) repónként engedélyezett. Az új repót hozzá kell adni a PAT **Repository access** listájához, **Contents: Read-only** jogosultsággal, és ha az org kéri, jóváhagyni. Enélkül a `/plugin/update` **502 `release_unavailable`** hibát ad, az auditban `github_http_404`-gyel — mert a GitHub privát repónál jogosultsághiányra is 404-et küld, nem 403-at. A tünet független a release helyességétől.
+
+Teszt kiadás után (cache-buster kell, mert a Cloudflare edge cache-elheti a korábbi választ):
+
+```bash
+KEY=<a pluginba égetett bearer kulcs>
+curl -s -H "Authorization: Bearer $KEY" \
+  "https://vikingoauth.hu/plugin/update?slug={slug}&cb=$RANDOM"
+# Vár: HTTP 200 + JSON a legfrissebb verzióval. 502 = PAT-scope hiányzik.
+```
+
+**Migrációs következmény:** a proxy-csatorna egy oldalon csak azután él, hogy az azt tartalmazó verzió **egyszer felkerült** rá (új telepítés vagy egyszeri kézi frissítés). A régebbi verziót futtató oldalak a korábbi csatornájukon maradnak, amíg egyszer kézzel frissülnek. Onnantól minden további frissítés automatikus, token nélkül.
 
 ## 7. Arculat és admin felület
 
@@ -276,4 +307,6 @@ Az arculati elemek egységesek minden pluginben, ugyanaz a logó (a design syste
 - [ ] Minden bemenet tisztítva, minden kimenet escapelve, nonce és capability minden műveletnél.
 - [ ] Nincs em-dash sehol.
 - [ ] Release zip tiszta, dev függőség és node_modules nélkül.
-- [ ] plugin-update-checker beállítva a repóra.
+- [ ] `Update URI` a proxyra mutat (`https://vikingoauth.hu/plugin/{slug}`), a plugin `src/Update/UpdateChecker.php`-t tartalmazza (6.1 pont).
+- [ ] A plugin fel van véve a vikingo-auth-server `PLUGINS` whitelistjébe, a worker deployolva, és a repo hozzá van adva a `vikingoauth-plugin-updates` PAT-hoz (Contents: Read-only).
+- [ ] Kiadás után a `/plugin/update?slug={slug}` HTTP 200-at ad (curl-teszt a 6.1 pont szerint).
