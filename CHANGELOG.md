@@ -15,6 +15,10 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
   dokumentálva. A 4. pont headerében az `Update URI`
   a proxyra mutat, a 13. pont ellenőrzőlistája a régi plugin-update-checker tétel
   helyett a proxy-beállítást kéri. Referencia: `vikingo-backup`, `vk-woocommerce`.
+- **`vikingo-szabvany` – „Frissítés keresése" gomb (6.1 pont):** ajánlott minta a
+  plugin saját beállítási oldalára, ami azonnal lekérdezi a frissítési csatornát
+  (`UpdateChecker::force_check()` + `wp_update_plugins()`), így friss kiadás után nem
+  kell a WP cache/cron lejártát kivárni. Referencia: `vk-woocommerce`.
 - **`vikingo-stilus` skill:** a Vikingo házi stílusa minden magyar felhasználói szöveghez:
   tegező hangnem, helyesírási és tipográfiai szabályok, terminológia-szótár,
   üzenet-minták, magyar forrás-stringek fordítható függvényben (i18n technika).
