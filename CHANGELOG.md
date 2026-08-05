@@ -5,6 +5,13 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 ## [Unreleased]
 
 ### Added
+- **`vikingo-elementor-atomic` skill:** Elementor V4 atomic widget minták a Vikingo
+  pluginekhez. A nem dokumentált atomic API bevált guard-mintái (class_exists +
+  experiment + try/catch), a widget-anatómia (statikus props séma, `rendered_html`
+  a `get_atomic_settings()`-ben), a twig-szerződés, a REST-alapú szerkesztői élő
+  előnézet, prop/control referencia, Elementor-frissítés utáni ellenőrzőlista és
+  ismert buktatók. Forrás: a vk-tematika, vk-ajanlas és vikingo-bunny-video élesben
+  bizonyított implementációi + a reference-elementor(-pro) 4.2.1 forrás.
 - **`vikingo-szabvany` – frissítési csatorna (6.1 pont):** a privát pluginek
   frissítése egységesen a vikingoauth.hu proxyn keresztül megy (natív WP update
   `Update URI` fejléccel, `src/Update/UpdateChecker.php` osztály, könyvtár nélkül).
