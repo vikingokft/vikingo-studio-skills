@@ -50,7 +50,10 @@ cd vikingo-studio-skills
 Az `install-skills.sh`:
 1. a **bemásolt** skilleket symlinkeli a `~/.claude/skills/`-be;
 2. a **külső** forrásokat (Claude, OpenAI, Notion, Vercel) a `.external/` mappába
-   klónozza a gépeden, majd onnan symlinkeli őket.
+   klónozza a gépeden, majd onnan symlinkeli őket;
+3. az **MCP-szervereket** (`mcp.conf`, pl. chrome-devtools) regisztrálja a Claude
+   Code-ba user hatókörrel — minden projektedben elérhetők lesznek. A már
+   regisztráltat kihagyja; törlés: `claude mcp remove <név>`.
 
 Az első futás letölti a külső forrásokat (internet kell hozzá).
 

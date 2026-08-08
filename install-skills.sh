@@ -70,7 +70,28 @@ if [ -f "$SRC_CONF" ]; then
   done
 fi
 
-# 3) Takarítás: az ebből a repóból (vagy a klónjaiból) származó, de célt vesztett
+# 3) MCP-szerverek regisztrálása (mcp.conf) — user hatókörrel, hogy minden
+# projektben elérhetők legyenek. A már regisztráltat kihagyjuk, így az
+# újrafuttatás biztonságos. Ha nincs claude CLI, a lépés némán kimarad.
+MCP_CONF="$REPO/mcp.conf"
+if [ -f "$MCP_CONF" ] && command -v claude >/dev/null 2>&1; then
+  grep -Ev '^\s*(#|$)' "$MCP_CONF" | while IFS='|' read -r name cmd; do
+    name="$(echo "$name" | xargs)"; cmd="$(echo "$cmd" | xargs)"
+    [ -n "$name" ] && [ -n "$cmd" ] || continue
+    if claude mcp get "$name" >/dev/null 2>&1; then
+      echo "→ [mcp] $name már regisztrálva, kihagyva"
+    else
+      # shellcheck disable=SC2086 — a parancs szándékosan szavakra bontva megy át.
+      if claude mcp add --scope user "$name" -- $cmd >/dev/null 2>&1; then
+        echo "→ [mcp] $name regisztrálva (user hatókör): $cmd"
+      else
+        echo "  ⚠ [mcp] $name regisztrálása nem sikerült"
+      fi
+    fi
+  done
+fi
+
+# 4) Takarítás: az ebből a repóból (vagy a klónjaiból) származó, de célt vesztett
 # symlinkek eltávolítása. Miért: átnevezett vagy törölt skill után ne maradjon
 # eltört link, ami a Claude Code-ot zavarná.
 removed=0

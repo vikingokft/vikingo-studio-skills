@@ -5,6 +5,11 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 ## [Unreleased]
 
 ### Added
+- **MCP-szerver manifest (`mcp.conf`) + telepítő-lépés:** az `install-skills.sh`
+  a skillek mellé a felsorolt MCP-szervereket is regisztrálja a Claude Code-ba
+  user hatókörrel (újrafuttatás-biztos, a már regisztráltat kihagyja). Első
+  bejegyzés: `chrome-devtools` (npx chrome-devtools-mcp@latest) — böngésző-
+  vizsgálat, performance trace, konzol- és hálózat-olvasás a Claude-ból.
 - **`vikingo-elementor-atomic` skill:** Elementor V4 atomic widget minták a Vikingo
   pluginekhez. A nem dokumentált atomic API bevált guard-mintái (class_exists +
   experiment + try/catch), a widget-anatómia (statikus props séma, `rendered_html`
