@@ -4,6 +4,16 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 
 ## [Unreleased]
 
+### Changed
+- **`vikingo-szabvany` – „Frissítés keresése" mostantól kötelező és két helyen (6.1 pont):**
+  az eddigi, csak a beállítási oldalra ajánlott gomb mellett a Bővítmények oldal
+  plugin-sorába is kell műveleti link (`plugin_action_links_{basename}`), az eredmény
+  ott admin notice-ban jelenik meg. A közös, nonce-olt admin-post kezelő az
+  `UpdateChecker`-ben él (nem a beállítási oldal osztályában), hogy inaktív fő
+  funkció (pl. kikapcsolt WooCommerce) mellett is működjön; a `ref=plugins`
+  paraméter dönti el a visszairányítás célját. A 13. pont ellenőrzőlistája új
+  tétellel bővült. Referencia: `vk-woocommerce` `src/Update/UpdateChecker.php`.
+
 ### Added
 - **`vikingo-szabvany` – frissítési csatorna (6.1 pont):** a privát pluginek
   frissítése egységesen a vikingoauth.hu proxyn keresztül megy (natív WP update

@@ -188,7 +188,12 @@ A privát pluginek frissítése **egységesen a vikingoauth.hu proxyn** kereszt�
 
 Referencia-implementáció, amiből másolni kell: `vikingo-backup` és `wp-plugin-vikingo-woocommerce` `src/Update/UpdateChecker.php`. Új pluginnál ezt az osztályt kell átemelni, a `SLUG`, `HOST`, `ENDPOINT` és a szöveges nevek átírásával; a bearer kulcs változatlan.
 
-**„Frissítés keresése" gomb (ajánlott).** A plugin saját beállítási oldalán (pl. Eszközök fül) legyen egy gomb, ami azonnal lekérdezi a csatornát, hogy friss kiadás után ne kelljen a WP frissítési cron/cache lejártát (6–12 óra) kivárni. A minta: az `UpdateChecker` egy `force_check()` metódusa üríti a saját metaadat-transientet, meghívja a `wp_update_plugins()`-t (hogy a Bővítmények oldal is frissüljön), és visszaadja az aktuális + legfrissebb verziót; a beállítási oldal egy nonce-olt `admin-post` művelettel hívja, majd értesítésben jelzi az eredményt (új verzió elérhető / naprakész / a csatorna nem válaszolt). A gomb az `UpdateChecker`-t használja, nem duplikálja a proxy-hívást; a tényleges telepítés marad a Bővítmények oldalon. Referencia: `wp-plugin-vikingo-woocommerce` (`UpdateChecker::force_check()` + a beállítási oldal Eszközök füle).
+**„Frissítés keresése" (kötelező, két helyen).** Minden Vikingo pluginban legyen manuális frissítés-ellenőrzés, hogy friss kiadás után ne kelljen a WP frissítési cron/cache lejártát (6–12 óra) kivárni:
+
+1. **A Bővítmények oldal plugin-sorában** műveleti linkként (`plugin_action_links_{basename}` filter), mert az admin ide megy frissíteni. Az eredményt a Bővítmények oldalon admin notice jelzi (új verzió elérhető / naprakész / a csatorna nem válaszolt); ha van új verzió, a `wp_update_plugins()` miatt a plugin-sor frissítési sávja is azonnal megjelenik.
+2. **A plugin beállítási oldalán** (pl. Eszközök fül) gombként, az eredmény ott jelenik meg notice-ban.
+
+A minta: az `UpdateChecker` egy `force_check()` metódusa üríti a saját metaadat-transientet, törli az `update_plugins` site-transientet, meghívja a `wp_update_plugins()`-t, és visszaadja az aktuális + legfrissebb verziót. Mindkét belépési pont **ugyanazt** a nonce-olt `admin-post` műveletet hívja; a kezelő az `UpdateChecker`-ben él (nem a beállítási oldal osztályában), mert a Bővítmények oldali linknek akkor is működnie kell, ha a plugin fő funkciója (pl. inaktív WooCommerce miatt) nem töltődik be. Egy `ref=plugins` paraméter dönti el, hogy a kezelő a Bővítmények oldalra vagy a beállítási oldalra irányít vissza. Capability: a linkhez `update_plugins`, a kezelőben `update_plugins` vagy a plugin saját admin-capabilityje. A tényleges telepítés marad a Bővítmények oldalon. Referencia: `wp-plugin-vikingo-woocommerce` `src/Update/UpdateChecker.php` (`force_check()`, `add_check_link()`, `handle_manual_check()`, `render_plugins_page_notice()`).
 
 **Szerver oldal (vikingo-auth-server, Cloudflare Worker a `vikingoauth.hu`-n).** A `/plugin/update` és `/plugin/download` endpoint a `src/routes/plugin.ts` `PLUGINS` whitelistjéből dolgozik. Új plugin bekötése két lépés:
 
@@ -313,5 +318,6 @@ Az arculati elemek egységesek minden pluginben, ugyanaz a logó (a design syste
 - [ ] Nincs em-dash sehol.
 - [ ] Release zip tiszta, dev függőség és node_modules nélkül.
 - [ ] `Update URI` a proxyra mutat (`https://vikingoauth.hu/plugin/{slug}`), a plugin `src/Update/UpdateChecker.php`-t tartalmazza (6.1 pont).
+- [ ] „Frissítés keresése" elérhető a Bővítmények oldal plugin-sorából ÉS a beállítási oldalról, közös admin-post kezelővel az `UpdateChecker`-ben (6.1 pont).
 - [ ] A plugin fel van véve a vikingo-auth-server `PLUGINS` whitelistjébe és a worker deployolva. (A GitHub PAT „All repositories" hatókörű, így új repót nem kell külön felvenni.)
 - [ ] Kiadás után a `/plugin/update?slug={slug}` HTTP 200-at ad (curl-teszt a 6.1 pont szerint).
