@@ -10,17 +10,14 @@ description: Embed WordPress's bundled CodeMirror editor in admin pages via
   handles such as `csslint`, `htmlhint`, `htmlhint-kses`, and `jsonlint`.
   Use for custom CSS, snippets, JSON schemas, webhook previews, regex fields,
   or any plugin settings textarea that needs syntax highlighting.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: "6.0 - 7.0"
-php-min: "7.4"
-last-updated: "2026-05-24"
-docs:
-  - https://developer.wordpress.org/reference/functions/wp_enqueue_code_editor/
-  - https://developer.wordpress.org/reference/functions/wp_get_code_editor_settings/
-  - https://developer.wordpress.org/reference/hooks/wp_code_editor_settings/
-  - https://codemirror.net/5/doc/manual.html
+metadata:
+  wp-skills-author: "Soczó Kristóf"
+  wp-skills-contact: "mailto:lonsdale201@hotmail.com"
+  wp-skills-plugin: "wordpress"
+  wp-skills-plugin-version-tested: "6.0 - 7.1"
+  wp-skills-wp-version-tested: "7.1"
+  wp-skills-php-min: "7.4"
+  wp-skills-last-updated: "2026-08-20"
 ---
 
 # WordPress Admin CodeMirror (`wp.codeEditor`)
@@ -100,7 +97,9 @@ If you want to pass a CSS selector, pass a jQuery object instead: `wp.codeEditor
 ?></textarea>
 ```
 
-That's the whole flow. The submit works automatically because CodeMirror's `EditorFromTextArea` sync-writes back into the original `<textarea>`.
+That's the whole flow for a native form submission. CodeMirror's
+`EditorFromTextArea` saves its value back into the original `<textarea>` when
+that form submits.
 
 ## Reading / writing programmatically
 
@@ -223,7 +222,11 @@ wp.codeEditor.initialize( 'my-editor', {
 - **Don't `wp_enqueue_code_editor()` globally**. It runs on every admin page-load and adds ~6 scripts + 1 stylesheet plus linters. Always gate on `$hook_suffix`.
 - **The `<textarea>` must exist before `initialize()` runs**. CodeMirror replaces the textarea in the DOM — late-added textareas (e.g. in a repeater) need their own `initialize()` after insertion.
 - **Don't re-initialize an already-initialized textarea**. Track instances; if you must re-init, call `instance.codemirror.toTextArea()` first to detach.
-- **Save the textarea, not the CodeMirror instance**. `EditorFromTextArea` syncs values back into the original `<textarea>` on every change — so `$_POST['myplugin_options']['custom_css']` works server-side without extra work. Don't pull from `wp.codeEditor.instances[...]` on submit.
+- **Native form submit is synchronized; arbitrary serialization is not**.
+  `EditorFromTextArea` updates the original `<textarea>` for the form's native
+  submit event. Before programmatically reading or serializing that textarea,
+  call `instance.codemirror.save()` or use `getValue()` directly. It does not
+  write the textarea on every editor change.
 
 ## Common mistakes
 
@@ -290,3 +293,7 @@ $settings['codemirror']['lint'] = false;
 - `wp-includes/general-template.php:4128` — `wp_get_code_editor_settings()`; the default CodeMirror options + per-MIME mode mapping. Filter point at line 4478.
 - `wp-admin/js/code-editor.js:416` — `wp.codeEditor.initialize()` definition; the DOMContentLoaded warning is line 417.
 - `wp-includes/js/codemirror/` — the actual CodeMirror 5 distribution bundled with core.
+- Official documentation: <https://developer.wordpress.org/reference/functions/wp_enqueue_code_editor/>
+- Official documentation: <https://developer.wordpress.org/reference/functions/wp_get_code_editor_settings/>
+- Official documentation: <https://developer.wordpress.org/reference/hooks/wp_code_editor_settings/>
+- Official documentation: <https://codemirror.net/5/doc/manual.html>
