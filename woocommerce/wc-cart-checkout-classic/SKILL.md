@@ -1,20 +1,13 @@
 ---
 name: wc-cart-checkout-classic
-description: Customize the classic WooCommerce cart and shortcode checkout with `woocommerce_add_cart_item_data`, `woocommerce_get_item_data`, `woocommerce_before_calculate_totals`, `woocommerce_cart_calculate_fees`, `woocommerce_checkout_fields`, `woocommerce_after_checkout_validation`, `woocommerce_checkout_update_order_meta`, and `woocommerce_checkout_create_order_line_item`. Covers cart-key merging, absolute price mutation, fees, classic checkout fields, order-line meta vs order meta, HPOS-safe order saves, and the Checkout Block / Store API boundary. Use when adding product options, custom cart data, fees, classic checkout fields, validation, or debugging missing/duplicated cart/order item data.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: woocommerce
-plugin-version-tested: "10.8.0"
-php-min: "7.4"
-last-updated: "2026-05-27"
-docs:
-  - https://woocommerce.com/document/tutorial-customising-checkout-fields-using-actions-and-filters/
-source-refs:
-  - wp-content/plugins/woocommerce/includes/class-wc-cart.php
-  - wp-content/plugins/woocommerce/includes/class-wc-checkout.php
-  - wp-content/plugins/woocommerce/includes/class-wc-form-handler.php
-  - wp-content/plugins/woocommerce/includes/wc-template-functions.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Utilities/CartController.php
+description: Customize the classic WooCommerce cart and shortcode checkout with `woocommerce_add_cart_item_data`, `woocommerce_get_item_data`, `woocommerce_before_calculate_totals`, `woocommerce_cart_calculate_fees`, `woocommerce_checkout_fields`, `woocommerce_after_checkout_validation`, `woocommerce_checkout_create_order`, and `woocommerce_checkout_create_order_line_item`. Covers cart-key merging, stable meta keys, absolute price mutation, fees, classic checkout fields, HPOS-safe order saves, and the Checkout Block / Store API boundary. Use when adding product options, custom cart data, fees, classic checkout fields, validation, or debugging missing or duplicated cart/order item data.
+metadata:
+  wp-skills-author: "Soczó Kristóf"
+  wp-skills-contact: "mailto:lonsdale201@hotmail.com"
+  wp-skills-plugin: "woocommerce"
+  wp-skills-plugin-version-tested: "11.0.0"
+  wp-skills-php-min: "7.4"
+  wp-skills-last-updated: "2026-08-05"
 ---
 
 # WooCommerce classic cart and checkout
@@ -117,18 +110,22 @@ add_action(
             return;
         }
 
-        $item->add_meta_data(
-            __( 'Engraving', 'myplugin' ),
-            sanitize_text_field( $values['myplugin_engraving'] ),
-            true
-        );
+        $item->add_meta_data( 'myplugin_engraving', sanitize_text_field( $values['myplugin_engraving'] ), true );
     },
     10,
     4
 );
 ```
 
-Use a private meta key such as `_myplugin_config` if the value is for machine logic only. Use a readable label when the value should appear to admins/customers.
+Never translate a stored meta key: the key would change with the checkout locale. Keep a stable private key and deliberately expose a translated label where needed:
+
+```php
+add_filter( 'woocommerce_order_item_display_meta_key', static function ( string $label, WC_Meta_Data $meta ): string {
+    return 'myplugin_engraving' === $meta->key ? __( 'Engraving', 'myplugin' ) : $label;
+}, 10, 2 );
+```
+
+Keys beginning with `_` are omitted by storefront/e-mail formatted item meta. Use an underscore-prefixed key such as `_myplugin_config` only for machine data that should remain hidden; otherwise use a stable namespaced visible key and translate its display label as above.
 
 ## Dynamic cart item prices
 
@@ -142,7 +139,9 @@ add_filter(
     static function ( array $cart_item_data, int $product_id, int $variation_id ): array {
         $product = wc_get_product( $variation_id ?: $product_id );
         if ( $product instanceof WC_Product ) {
-            $cart_item_data['myplugin_base_price'] = (float) $product->get_price( 'edit' );
+            // Choose the canonical base deliberately. View context includes active
+            // runtime price filters; edit context means the stored raw value.
+            $cart_item_data['myplugin_base_price'] = (float) $product->get_price();
         }
         return $cart_item_data;
     },
@@ -198,6 +197,8 @@ add_action(
 
 Fees become `WC_Order_Item_Fee` items during checkout. They are not product line items.
 
+Do not use a negative fee as a discount. It creates confusing tax/refund/accounting behavior; use a WooCommerce coupon or a purpose-built discount calculation.
+
 ## Classic checkout fields
 
 `woocommerce_checkout_fields` modifies the field arrays for classic checkout sections: `billing`, `shipping`, `account`, and `order`.
@@ -234,26 +235,26 @@ add_action(
 );
 
 add_action(
-    'woocommerce_checkout_update_order_meta',
-    static function ( int $order_id, array $data ): void {
+    'woocommerce_checkout_create_order',
+    static function ( WC_Order $order, array $data ): void {
         if ( empty( $data['billing_vat_id'] ) ) {
             return;
         }
 
-        $order = wc_get_order( $order_id );
-        if ( ! $order instanceof WC_Order ) {
-            return;
-        }
-
         $order->update_meta_data( '_billing_vat_id', sanitize_text_field( $data['billing_vat_id'] ) );
-        $order->save();
     },
     10,
     2
 );
 ```
 
+`woocommerce_checkout_create_order` runs before the checkout's first order save, so no reload or extra write is needed. The older `woocommerce_checkout_update_order_meta` hook receives an already-created order ID and costs an additional CRUD save.
+
 Use Woo order APIs for HPOS compatibility. Never write checkout order data with `update_post_meta( $order_id, ... )`.
+
+## Phone validation and formatting in WooCommerce 11.0
+
+WooCommerce 11.0 separates shape checking (`WC_Validation::is_phone_format()`), filterable country-aware acceptance (`WC_Validation::is_phone()` / `woocommerce_validate_phone`), and normalization (`wc_format_phone_number()` / `woocommerce_format_phone_number`). Requiredness is separate, and formatting never proves ownership or changes validation by itself. See [references/phone-validation.md](references/phone-validation.md) for the exact filter signatures and integration rules.
 
 ## Common mistakes
 
@@ -264,6 +265,7 @@ Use Woo order APIs for HPOS compatibility. Never write checkout order data with 
 - Expecting `woocommerce_checkout_fields` to render in Checkout Block.
 - Saving line-item data in order meta instead of `woocommerce_checkout_create_order_line_item`.
 - Trusting posted product/checkout fields without sanitizing and validating.
+- Using `wc_format_phone_number()` as the acceptance check or forgetting that phone requiredness is separate from shape validation.
 - Using `$_SESSION`; use `WC()->session` for cart/session state.
 
 ## Cross-skill routing
@@ -272,3 +274,13 @@ Use Woo order APIs for HPOS compatibility. Never write checkout order data with 
 - HPOS order storage concerns: `wc-hpos-compatibility`
 - Customer/session persistence: `wc-customer-and-sessions`
 - Payment gateway checkout processing: `wc-payment-gateway`
+
+## References
+
+- Official documentation: <https://woocommerce.com/document/tutorial-customising-checkout-fields-using-actions-and-filters/>
+- Verified source paths:
+  - `wp-content/plugins/woocommerce/includes/class-wc-cart.php`
+  - `wp-content/plugins/woocommerce/includes/class-wc-checkout.php`
+  - `wp-content/plugins/woocommerce/includes/class-wc-form-handler.php`
+  - `wp-content/plugins/woocommerce/includes/wc-template-functions.php`
+  - `wp-content/plugins/woocommerce/src/StoreApi/Utilities/CartController.php`

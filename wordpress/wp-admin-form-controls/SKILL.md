@@ -9,17 +9,14 @@ description: Use WordPress admin form-control widgets that ship in core,
   and `wp-pointer` dismissal through `dismiss-wp-pointer`. Use when adding
   color, date, typeahead, or first-run pointer controls to settings pages,
   metaboxes, or repeater rows.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: "6.0 - 7.0"
-php-min: "7.4"
-last-updated: "2026-05-24"
-docs:
-  - https://developer.wordpress.org/reference/functions/wp_enqueue_script/
-  - https://api.jqueryui.com/datepicker/
-  - https://api.jqueryui.com/autocomplete/
-  - https://automattic.github.io/Iris/
+metadata:
+  wp-skills-author: "Soczó Kristóf"
+  wp-skills-contact: "mailto:lonsdale201@hotmail.com"
+  wp-skills-plugin: "wordpress"
+  wp-skills-plugin-version-tested: "6.0 - 7.1"
+  wp-skills-wp-version-tested: "7.1"
+  wp-skills-php-min: "7.4"
+  wp-skills-last-updated: "2026-08-20"
 ---
 
 # WordPress Admin Form Controls
@@ -94,7 +91,10 @@ jQuery( function ( $ ) {
 
 ```php
 'sanitize_callback' => static function ( $value ): string {
-    return sanitize_hex_color( (string) $value ) ?: '';
+    if ( ! is_string( $value ) ) {
+        return '';
+    }
+    return sanitize_hex_color( $value ) ?: '';
 },
 ```
 
@@ -102,7 +102,11 @@ jQuery( function ( $ ) {
 
 ## Date picker — `jquery-ui-datepicker`
 
-The bundled jQuery UI datepicker. The non-obvious bit: **core does NOT enqueue a default stylesheet for it**. You either ship your own or pull a CDN one. Plugins frequently render an unstyled datepicker and blame "WordPress weirdness".
+The bundled jQuery UI datepicker. The non-obvious bit: **core does NOT enqueue
+a default stylesheet for it**. Ship a small plugin-owned stylesheet; avoid
+making wp-admin depend on a third-party CDN. For a simple date-only value,
+prefer native `<input type="date">` and use jQuery UI only when you need a
+consistent calendar UI or constraints native controls cannot provide.
 
 ### Enqueue
 
@@ -127,6 +131,14 @@ add_action( 'admin_enqueue_scripts', static function ( string $hook_suffix ): vo
         array( 'jquery-ui-datepicker', 'wp-i18n' ),
         MYPLUGIN_VERSION,
         array( 'in_footer' => true )
+    );
+
+    wp_add_inline_script(
+        'myplugin-date-init',
+        'window.MyPluginDates = ' . wp_json_encode( array(
+            'firstDay' => (int) get_option( 'start_of_week', 0 ),
+        ) ) . ';',
+        'before'
     );
 } );
 ```
@@ -159,7 +171,7 @@ If you don't want to bundle your own CSS, the jQuery UI "smoothness" theme CSS w
 jQuery( function ( $ ) {
     $( '.myplugin-date-field' ).datepicker( {
         dateFormat:      'yy-mm-dd',           // ISO format for storage. NOT PHP's date() format — jQuery UI's.
-        firstDay:        1,                    // Monday — or 0 for Sunday
+        firstDay:        MyPluginDates.firstDay,
         changeMonth:     true,
         changeYear:      true,
         yearRange:       '-5:+5',
@@ -210,9 +222,14 @@ wp_enqueue_script(
 
 For user / term suggestions, core ships `user-suggest` (admin pages only) and `tags-suggest` — those are wrappers around `jquery-ui-autocomplete` that hit core admin-ajax endpoints. Worth reusing if your "User" autocomplete maps to WP users — see `wp-admin/js/user-suggest.js`.
 
-## Admin pointer — `wp-pointer`
+## Admin onboarding pointer — `wp-pointer`
 
 The blue floating tooltip core uses for "new feature" onboarding (e.g. the first-time pointer that introduced the Customizer). Useful in plugins for: announcing a new admin menu item after a version bump, drawing attention to a moved button, first-time-tour-style hints.
+
+This is not WordPress 7.1's `wp_get_tooltip()` / `wp_get_toggletip()` API.
+Pointers are dismissible onboarding UI with user-meta persistence; tooltips are
+accessible control names or supporting context. Use `wp-accessibility-audit`
+when the requested UI is a tooltip/toggletip rather than a one-time tour.
 
 Handle `wp-pointer` is registered at `wp-includes/script-loader.php:860` and depends on `jquery-ui-core`. The matching stylesheet `wp-pointer` is registered at `:1655` and depends on `dashicons` — enqueue both.
 
@@ -248,6 +265,7 @@ wp_enqueue_script(
 - **For pointers, use core's `dismiss-wp-pointer` AJAX action**, not a custom one. The user-meta key `dismissed_wp_pointers` is what every other dismissed pointer in WP uses; matching the convention means a clean uninstall (you can remove your slug from the CSV in your uninstaller).
 - **Pointer slugs must be `sanitize_key()`-safe**. Use lowercase letters, numbers, and underscores, or core's dismissal handler rejects the request.
 - **Don't init `wpColorPicker` while its input is inside a hidden container** — Iris reads computed dimensions at init time. Init AFTER the containing tab/accordion is shown, or call `.iris('refresh')` on the input after revealing it.
+- **WordPress 7.1 bundles jQuery UI 1.14.2 with back-compat enabled.** Use public widget APIs; regression-test code that reaches into underscored methods or generated markup.
 
 ## Common AI mistakes
 
@@ -275,3 +293,7 @@ See `reference.md` for before/after snippets: script without stylesheet, unstyle
 - `wp-includes/script-loader.php:937-939` — `jquery-ui-autocomplete` (deps `jquery-ui-menu`, `wp-a11y`) and `jquery-ui-datepicker` (deps `jquery-ui-core`).
 - `wp-admin/js/user-suggest.js`, `wp-admin/js/tags-suggest.js` — reference autocomplete implementations for users/tags.
 - `reference.md` — autocomplete source shapes, pointer dismissal example, and common mistakes.
+- Official documentation: <https://developer.wordpress.org/reference/functions/wp_enqueue_script/>
+- Official documentation: <https://api.jqueryui.com/datepicker/>
+- Official documentation: <https://api.jqueryui.com/autocomplete/>
+- Official documentation: <https://automattic.github.io/Iris/>

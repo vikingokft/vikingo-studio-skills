@@ -1,134 +1,84 @@
 ---
 name: wc-store-api
-description: Build against the WooCommerce Store API (`/wp-json/wc/store/v1`) for shopper-facing products, cart, checkout, Cart/Checkout Blocks, and headless carts. Covers route choice, Nonce header (`wp_create_nonce('wc_store_api')`) vs Cart-Token, Store API sessions/CORS/rate limits, `woocommerce_store_api_register_endpoint_data`, `/cart/extensions` + `extensionCartUpdate`, payment requirements, product query pitfalls such as `related`, and when to use WC REST `wc/v4` instead. Use when adding checkout-block data, Store API calls, custom cart state, Store API payment availability, or headless cart/checkout behavior.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: woocommerce
-plugin-version-tested: "10.8.0"
-php-min: "7.4"
-last-updated: "2026-05-26"
-docs:
-  - https://developer.woocommerce.com/docs/apis/store-api/
-  - https://developer.woocommerce.com/docs/apis/store-api/nonce-tokens/
-  - https://developer.woocommerce.com/docs/apis/store-api/cart-tokens/
-  - https://developer.woocommerce.com/docs/apis/store-api/extending-store-api/extend-store-api-add-data/
-source-refs:
-  - wp-content/plugins/woocommerce/src/StoreApi/RoutesController.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Routes/V1/AbstractCartRoute.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Authentication.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Schemas/ExtendSchema.php
-  - wp-content/plugins/woocommerce/src/StoreApi/functions.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Routes/V1/CartExtensions.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Schemas/V1/CartExtensionsSchema.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Utilities/CartController.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Utilities/ProductQuery.php
-  - wp-content/plugins/woocommerce/src/StoreApi/Routes/V1/Products.php
-  - wp-content/plugins/woocommerce/assets/client/blocks/wc-blocks-data.js
+description: Build shopper-facing WooCommerce integrations with the Store API. Covers `/wc/store/v1`, public product reads, cart Nonce and Cart-Token authentication, CORS, Store API sessions, endpoint data and cart update extensions, collection-count query bounds, JSON input handling, add-to-cart validation, payment requirements, checkout draft timing, existing-order payment validation, and feature-gated routes. Use for headless carts, Checkout Block server integration, Store API extensions, cart mutations, or nonce/session/order timing bugs.
+metadata:
+  wp-skills-author: "Soczó Kristóf"
+  wp-skills-contact: "mailto:lonsdale201@hotmail.com"
+  wp-skills-plugin: "woocommerce"
+  wp-skills-plugin-version-tested: "11.0.0"
+  wp-skills-php-min: "7.4"
+  wp-skills-last-updated: "2026-08-05"
 ---
 
 # WooCommerce Store API
 
-The Store API is WooCommerce's shopper-facing REST surface. It powers Cart and Checkout blocks and is the right API for product browsing, current-cart reads/writes, current-customer checkout data, and headless cart/checkout flows.
+Store API is the public shopper/cart surface. It is different from authenticated merchant CRUD under `wc/v3` or `wc/v4`.
 
-It is **not** the admin/integration REST API (`/wp-json/wc/v3` or `/wp-json/wc/v4`). Store API routes are public by design and return data for the current shopper/session only. If you need store settings, arbitrary orders/customers by ID, private product data, or back-office CRUD, use authenticated WC REST (`wc/v4`) or a custom WP REST route with explicit permissions.
+## Namespace and route families
 
-## Misconception this skill corrects
+WooCommerce registers the stable routes under both `wc/store` and `wc/store/v1`; use the explicit versioned form in clients:
 
-> "Checkout is WooCommerce REST, so I will call `/wp-json/wc/v4/orders` from the browser."
-
-That leaks the wrong model. WC REST is capability/consumer-key based and exposes admin-style resources. Store API is cart/session based, uses `Nonce` or `Cart-Token` for write protection, and is shaped for blocks/headless storefronts. Do not ship WC consumer keys to a browser to make checkout work.
-
-## When to use this skill
-
-Trigger when ANY of the following is true:
-
-- Building or debugging Cart/Checkout Blocks behavior.
-- Calling `/wp-json/wc/store/v1/...` from JS, a mobile client, or a headless frontend.
-- Adding extension data under `extensions.<namespace>` to cart items, cart, checkout, or products.
-- Mutating custom cart state from block checkout via `/cart/extensions` or `extensionCartUpdate`.
-- Filtering payment-method availability for block checkout with Store API payment requirements.
-- The diff contains `woocommerce_store_api_register_endpoint_data`, `woocommerce_store_api_register_update_callback`, `woocommerce_store_api_register_payment_requirements`, `Cart-Token`, `wc_store_api`, or `extensionCartUpdate`.
-
-## Mental model
-
-| Need | Use |
-|---|---|
-| Public products/product filters for storefront UI | Store API `/wc/store/v1/products` |
-| Current shopper cart read/write | Store API `/wc/store/v1/cart...` |
-| Checkout the current cart | Store API `/wc/store/v1/checkout` |
-| Add data to existing Store API responses | `woocommerce_store_api_register_endpoint_data()` |
-| Let block UI update plugin cart state | `/cart/extensions` via `woocommerce_store_api_register_update_callback()` |
-| Admin/server CRUD for orders, products, refunds, fulfillments, settings | WC REST `wc/v4` |
-| Plugin-specific private endpoint | Custom `register_rest_route()` with `permission_callback` |
-
-All stable Store API resources are under `/wp-json/wc/store/v1`. Woo also registers `/wc/store` as an alias to the current v1 routes, but hardcode `/wc/store/v1` in clients so versioning is explicit.
-
-## Route map
-
-Source-verified in `src/StoreApi/RoutesController.php` and `src/StoreApi/Routes/V1/`:
-
-| Area | Common routes |
-|---|---|
-| Cart | `GET /cart`, `POST /cart/add-item`, `POST /cart/update-item`, `POST /cart/remove-item`, `POST /cart/apply-coupon`, `POST /cart/remove-coupon`, `POST /cart/update-customer`, `POST /cart/select-shipping-rate`, `POST /cart/extensions` |
-| Cart collections | `/cart/items`, `/cart/items/<key>`, `/cart/coupons`, `/cart/coupons/<code>` |
-| Checkout | `GET /checkout`, `POST /checkout`, `PUT /checkout`, `POST /checkout/<id>` |
-| Order | `GET /order/<id>` for the current shopper/order key flow, not arbitrary admin lookup |
-| Products | `/products`, `/products/<id>`, `/products/<slug>`, `/products/collection-data` |
-| Taxonomies | `/products/categories`, `/products/tags`, `/products/attributes`, `/products/attributes/<id>/terms`, `/products/brands` |
-| Reviews/batch | `/products/reviews`, `/batch` |
-
-Private routes under `/wc/private` and experimental/feature-gated agentic checkout routes are not plugin extension contracts. Do not build public plugin behavior on them.
-
-## Nonce, Cart-Token, and sessions
-
-Store API writes do **not** use `X-WP-Nonce` / `wp_rest`. They use a header named `Nonce` whose value is created with:
-
-```php
-wp_create_nonce( 'wc_store_api' );
+```text
+/wp-json/wc/store/v1/products
+/wp-json/wc/store/v1/products/<id>
+/wp-json/wc/store/v1/cart
+/wp-json/wc/store/v1/cart/add-item
+/wp-json/wc/store/v1/cart/update-item
+/wp-json/wc/store/v1/cart/remove-item
+/wp-json/wc/store/v1/cart/apply-coupon
+/wp-json/wc/store/v1/cart/update-customer
+/wp-json/wc/store/v1/cart/select-shipping-rate
+/wp-json/wc/store/v1/cart/extensions
+/wp-json/wc/store/v1/checkout
+/wp-json/wc/store/v1/order/<id>
 ```
 
-Cart routes send fresh headers with each response:
+Products, categories, brands, tags, attributes, terms, collection data, and reviews are read-oriented shopper resources. They honor catalog visibility and are not private catalog/admin APIs.
 
-- `Nonce`
-- `Nonce-Timestamp`
-- `Cart-Token`
-- `Cart-Hash`
-- `User-ID`
-- `Cache-Control: no-store`
+WooCommerce 11.0 hardens single-product and review reads: a variation is not returned by ID/slug when its parent is missing or unpublished, and product-review collections exclude reviews belonging to unpublished products. Custom shopper-facing routes must preserve the parent-product visibility check; knowing a variation ID or review ID is not authorization to disclose private catalog data.
 
-For update methods (`POST`, `PUT`, `PATCH`, `DELETE`), `AbstractCartRoute` requires `Nonce` unless a valid `Cart-Token` header is present. Missing nonce returns `woocommerce_rest_missing_nonce` (401); invalid nonce returns `woocommerce_rest_invalid_nonce` (403).
+### WooCommerce 11.0 collection-count bounds
+
+`GET /wc/store/v1/products/collection-data` can run full-collection aggregate queries for every entry in `calculate_attribute_counts` and `calculate_taxonomy_counts`. WooCommerce 11.0 limits each input array to 25 entries at REST schema validation. Requests over the cap fail instead of creating unbounded query fan-out.
+
+Core also normalizes and deduplicates requested taxonomies, resolves numeric global-attribute IDs, skips non-product-attribute taxonomies for attribute counts, and ignores unregistered taxonomies for generic counts. Clients should still send only the counts the current view renders, reuse responses, and handle a validation error rather than splitting an untrusted request into unlimited parallel calls.
+
+Shopper-list routes are registered only when WooCommerce's `ShopperListsController` reports at least one supporting feature enabled. The experimental `agentic_checkout` feature uses a separate `wc/agentic/v1` namespace, is disabled by default, and must not be assumed to be Store API v1.
+
+## Nonce and Cart-Token
+
+Cart writes require one of these identities:
+
+1. `Nonce` request header containing `wp_create_nonce( 'wc_store_api' )` for cookie/session browser flows.
+2. A valid `Cart-Token` header for token-based headless continuity.
+
+Do not send `X-WP-Nonce`/`wp_rest` as a Store API cart nonce. That is the regular WP REST convention, not the Store API write contract.
 
 Headless flow:
 
 ```bash
+# The response supplies Cart-Token and a refreshed Nonce.
 curl -i https://store.example/wp-json/wc/store/v1/cart
-# Save the Cart-Token response header.
 
-curl -H "Cart-Token: $CART_TOKEN" \
-  -H "Content-Type: application/json" \
-  -X POST \
-  -d '{"id":123,"quantity":1}' \
-  https://store.example/wp-json/wc/store/v1/cart/add-item
+curl -X POST https://store.example/wp-json/wc/store/v1/cart/add-item \
+  -H 'Content-Type: application/json' \
+  -H "Cart-Token: $CART_TOKEN" \
+  -d '{"id":123,"quantity":1}'
 ```
 
-Same-site browser flow can use cookies + the `Nonce` header returned by the API. A `Cart-Token` is usually easier for headless clients because it avoids cookie affinity and also bypasses the nonce requirement for cart/checkout updates.
+Capture the newest token/header values from responses. Treat `Cart-Token` as a bearer credential: do not log it, put it in analytics URLs, or share it across customers.
 
-Store API CORS is stricter than the default WP REST behavior because cart/checkout responses can include shopper data. `Cart-Token` and `Nonce` are allowed request headers; only `Cart-Token` is exposed in CORS responses. A valid cart token can allow access from origins that would otherwise fail origin checks.
+Store API's token handler shares `wp_woocommerce_sessions` with the classic handler but has no cookie, cron, or object-cache layer.
 
-## Extending response data
+## CORS boundary
 
-Register extension data after `woocommerce_blocks_loaded`; the Store API container is not ready before then. Use the helper functions rather than instantiating `ExtendSchema` yourself.
+Store API permits `Cart-Token` and `Nonce` request headers. It exposes `Cart-Token`, not the nonce, in CORS responses. A valid Cart-Token can authorize an origin that would otherwise fail the Store API origin check.
 
-Extensible endpoint identifiers:
+Set a narrow frontend origin policy around any additional custom endpoints. Never expose Woo consumer keys, gateway secrets, or admin REST credentials to the shopper client.
 
-| Identifier | Constant | `data_callback` args |
-|---|---|---|
-| `cart` | `CartSchema::IDENTIFIER` | none |
-| `cart-item` | `CartItemSchema::IDENTIFIER` | `$cart_item` |
-| `checkout` | `CheckoutSchema::IDENTIFIER` | none |
-| `product` | `ProductSchema::IDENTIFIER` | `WC_Product $product` |
+## Extend response data
 
-Example: add public product badge data under `extensions.myplugin`:
+Register after `woocommerce_blocks_loaded` and use the public helper:
 
 ```php
 use Automattic\WooCommerce\StoreApi\Schemas\V1\ProductSchema;
@@ -139,14 +89,14 @@ add_action( 'woocommerce_blocks_loaded', static function (): void {
         'namespace'       => 'myplugin',
         'data_callback'   => static function ( WC_Product $product ): array {
             return array(
-                'badge' => (string) $product->get_meta( '_myplugin_badge' ),
+                'badge' => (string) $product->get_meta( '_myplugin_public_badge' ),
             );
         },
         'schema_callback' => static function (): array {
             return array(
                 'badge' => array(
-                    'description' => __( 'Short public badge text.', 'myplugin' ),
-                    'type'        => array( 'string', 'null' ),
+                    'description' => __( 'Public badge text.', 'myplugin' ),
+                    'type'        => 'string',
                     'readonly'    => true,
                 ),
             );
@@ -156,139 +106,152 @@ add_action( 'woocommerce_blocks_loaded', static function (): void {
 } );
 ```
 
-Rules for extension data:
+Extension data appears below `extensions.myplugin`. Callbacks and schema callbacks must return arrays. Keep data callbacks read-only, cheap, and free of secrets or admin-only metadata.
 
-- Namespace is required and should be your plugin slug.
-- `data_callback` and `schema_callback` must return arrays. Returning anything else is logged and becomes empty data for non-admins.
-- Data appears under the endpoint's `extensions` object, not as a top-level field.
-- Do not mutate cart/order state from a response `data_callback`; keep it read-only.
-- Do not expose secrets, private settings, arbitrary customer/order lookups, or admin-only product data. Store API is public.
+Supported extension schema identifiers include cart, cart item, checkout, and product. Use the schema constants rather than hardcoded identifiers where available.
 
-## Updating cart state from blocks
+## Mutate extension cart state
 
-Use `/cart/extensions` for plugin state that the shopper can change in cart/checkout UI: gift wrap, delivery instruction, insurance toggle, pickup choice, custom fee option, etc.
-
-PHP registration:
+Use `/cart/extensions` and a registered update callback:
 
 ```php
 add_action( 'woocommerce_blocks_loaded', static function (): void {
     woocommerce_store_api_register_update_callback( array(
         'namespace' => 'myplugin',
         'callback'  => static function ( array $data ): void {
-            $gift_wrap = ! empty( $data['gift_wrap'] );
-            WC()->session->set( 'myplugin_gift_wrap', $gift_wrap );
+            WC()->session->set( 'myplugin_gift_wrap', ! empty( $data['gift_wrap'] ) );
         },
     ) );
 } );
 ```
 
-JS call from a checkout/cart block extension:
+The route runs the callback, recalculates totals, and returns a fresh cart. Validate and normalize every value in the callback; namespace registration is routing, not authorization.
 
-```js
-import { extensionCartUpdate } from '@woocommerce/blocks-checkout';
+Arbitrary JSON fields sent to `/cart/add-item` are not automatically copied into cart item data. Bridge deliberate fields through `woocommerce_store_api_add_to_cart_data`, then validate them.
 
-await extensionCartUpdate( {
-    namespace: 'myplugin',
-    data: { gift_wrap: true },
-    overwriteDirtyCustomerData: {
-        shipping_address: false,
-        billing_address: false,
+## Add-to-cart validation and quantities
+
+```php
+add_action(
+    'woocommerce_store_api_validate_add_to_cart',
+    static function ( WC_Product $product, array $request ): void {
+        if ( myplugin_product_is_locked( $product ) ) {
+            throw new Exception( __( 'This product cannot be added to the cart.', 'myplugin' ) );
+        }
     },
-} );
+    10,
+    2
+);
 ```
 
-`/cart/extensions` loads the cart, runs your callback with `data`, recalculates totals, and returns the updated cart response. In WC 10.8, `overwriteDirtyCustomerData` can be a boolean or an object with `shipping_address` / `billing_address` booleans, so extensions can avoid overwriting the shopper's unsaved address edits independently.
+Quantity constraints exposed to clients use:
 
-## Payment requirements
-
-Payment requirements are extra cart-wide support flags. Store API merges your returned strings with the default requirement `products` and compares them against each gateway's `$supports` array.
-
-```php
-add_action( 'woocommerce_blocks_loaded', static function (): void {
-    woocommerce_store_api_register_payment_requirements( array(
-        'data_callback' => static function (): array {
-            if ( myplugin_cart_requires_saved_card() ) {
-                return array( 'tokenization' );
-            }
-            return array();
-        },
-    ) );
-} );
-```
-
-This filters which gateways are valid for the current Store API cart. It does not register gateway UI. Checkout Block payment UI is still a JS payment-method integration; the PHP gateway class still owns `process_payment()`.
-
-## Validation and quantity hooks
-
-For Store API add-to-cart validation, prefer:
-
-```php
-add_action( 'woocommerce_store_api_validate_add_to_cart', static function ( WC_Product $product, array $request ): void {
-    if ( myplugin_product_is_locked( $product ) ) {
-        throw new Exception( __( 'This product cannot be added to the cart.', 'myplugin' ) );
-    }
-}, 10, 2 );
-```
-
-Quantity constraints shown in Store API cart/item schemas come from `QuantityLimits`. Filter:
-
-```php
+```text
 woocommerce_store_api_product_quantity_minimum
 woocommerce_store_api_product_quantity_maximum
 woocommerce_store_api_product_quantity_multiple_of
 woocommerce_store_api_product_quantity_editable
 ```
 
-Each receives the value, `WC_Product $product`, and optional `$cart_item`.
+Server validation still owns the final decision; client limits are UX hints.
 
-## Product endpoint notes for 10.8
+## Checkout draft timing
 
-`GET /wc/store/v1/products` is public and cache-sensitive. WC 10.8 fixed transient bloat caused by arbitrary product IDs in the `related` query parameter. In 10.8 source, `related` is an integer product ID, sanitized with `absint`, and invalid/non-visible products throw `woocommerce_rest_product_not_found`.
+Since WooCommerce 10.8, `PATCH /checkout` can update customer/session state before any `WC_Order` exists. Draft order materialization is deferred to POST/place-order.
 
-Rules:
+| Need | Hook | Order available |
+|---|---|---|
+| Observe PATCH draft updates | `woocommerce_store_api_checkout_update_draft` | No; receives request |
+| First order materialization | `woocommerce_store_api_checkout_order_created` | Yes; receives order |
+| Write order metadata | `woocommerce_store_api_checkout_update_order_meta` | Yes; receives order |
 
-- Pass a single product ID to `related`, not arrays or comma lists.
-- Do not use Store API products as a private catalog endpoint. Visibility/readability checks still matter.
-- Use WC REST `wc/v4/products` with proper auth when you need admin/private product fields.
+Persist pre-order state in the Woo session, then copy it into the order object at `woocommerce_store_api_checkout_update_order_meta`. The old `__experimental_woocommerce_blocks_checkout_update_order_meta` and `woocommerce_blocks_checkout_update_order_meta` actions are deprecated.
+
+WooCommerce 10.9.4 also fixed checkout order `is_vat_exempt` synchronization for logged-in shoppers. Do not trust a client-supplied VAT-exempt flag; set validated customer state server-side and let checkout copy current cart customer state.
+
+### Additional checkout fields: register at the Woo boundary
+
+WooCommerce 11.0 warns when `woocommerce_register_additional_checkout_field()` is called too early because that can trigger premature translation loading. Register on `woocommerce_init` or later:
+
+```php
+add_action( 'woocommerce_init', static function (): void {
+    woocommerce_register_additional_checkout_field( array(
+        'id'       => 'myplugin/delivery_note',
+        'label'    => __( 'Delivery note', 'myplugin' ),
+        'location' => 'order',
+        'type'     => 'text',
+        'required' => false,
+        'sanitize_callback' => static function ( $value ) {
+            return sanitize_text_field( (string) $value );
+        },
+        'validate_callback' => static function ( $value ) {
+            return strlen( (string) $value ) <= 200
+                ? null
+                : new WP_Error( 'myplugin_note_too_long', __( 'Delivery note is too long.', 'myplugin' ) );
+        },
+    ) );
+} );
+```
+
+Field IDs require `namespace/name`; supported locations are `contact`, `address`, and `order` (`additional` is deprecated), and core field types are `text`, `select`, and `checkbox`. Sanitize and validate decoded values, keep callbacks deterministic, and let Woo persist registered fields through its customer/order CRUD. WooCommerce 11.0 also fixes validation for phone/postcode/state-shaped fields outside billing/shipping fieldsets; do not reintroduce fieldset assumptions in extension callbacks.
+
+### JSON additional fields are already unslashed
+
+Store API request bodies are JSON-decoded and are never WordPress magic-quoted. In WooCommerce 11.0, checkout additional-field validation correctly passes the decoded value to `wc_clean()` without `wp_unslash()`.
+
+Apply `wp_unslash()` at classic superglobal boundaries such as `$_POST`; do not apply it blindly to values obtained from `WP_REST_Request::get_json_params()` or Store API additional-field callbacks. Otherwise a legitimate backslash can be removed before validation/storage. Continue to follow each concrete route's contract: some compatibility parameters still normalize legacy form-style input separately.
+
+### Paying an existing order
+
+For `POST /wc/store/v1/checkout/<order-id>`, WooCommerce 11.0 sets the submitted billing/shipping address on the in-memory order and validates it before saving either the order or `WC()->customer`. A rejected address no longer partially mutates the persisted order/customer first. Extension hooks must preserve that validate-before-persist boundary and avoid independent customer writes before Store API reports success.
+
+## Payment requirements
+
+```php
+add_action( 'woocommerce_blocks_loaded', static function (): void {
+    woocommerce_store_api_register_payment_requirements( array(
+        'data_callback' => static function (): array {
+            return myplugin_cart_needs_tokenization() ? array( 'tokenization' ) : array();
+        },
+    ) );
+} );
+```
+
+Requirements are compared with gateway `$supports`. This filters gateway eligibility; it does not register a Checkout Block payment UI or replace the PHP gateway's `process_payment()`.
+
+Use `wc-checkout-block-payment-method` for `AbstractPaymentMethodType`, `registerPaymentMethod()`, `onPaymentSetup`, `payment_data`, and the `PaymentContext`/legacy-gateway processing bridge.
 
 ## Critical rules
 
-- **Store API is `wc/store/v1`, not `wc/v4`.** Use Store API for shopper cart/checkout; use WC REST for admin/integration CRUD.
-- **Never ship WC consumer keys or secret gateway keys to a public client.**
-- **Use header `Nonce`, action `wc_store_api`; not `X-WP-Nonce`, action `wp_rest`.**
-- **Use `Cart-Token` for headless cart continuity.** Get it from `GET /cart`, send it back as a request header.
-- **Register Store API extension callbacks on `woocommerce_blocks_loaded`.**
-- **Keep extension data public and read-only.** Use `/cart/extensions` for mutations.
-- **Return arrays from Store API callbacks.** Non-array return values are logged and dropped.
-- **Namespace extension data.** Do not write top-level response fields or generic namespaces like `custom`.
-- **Do not subclass internal Store API route classes for plugin endpoints.** Use `register_rest_route()` for your own routes; use Store API helpers only where WC exposes extension points.
-- **Do not disable nonce checks outside local/dev testing.** `woocommerce_store_api_disable_nonce_check` is a development escape hatch, not production configuration.
-- **Use Store API rate-limit hooks for public write-heavy Store API flows.** `woocommerce_store_api_rate_limit_options`, `woocommerce_store_api_rate_limit_id`, and `woocommerce_store_api_rate_limit_exceeded` affect Store API requests; unrelated custom REST routes need their own limits.
+- Use `wc/store/v1` for shopper cart/checkout, not `wc/v4`.
+- Use `Nonce` with action `wc_store_api`, or a valid `Cart-Token`.
+- Register Store API extensions on `woocommerce_blocks_loaded`.
+- Namespace response/update data and return schema-compatible arrays.
+- Never mutate state in a response data callback.
+- Never assume a checkout order exists during PATCH.
+- Never `wp_unslash()` already decoded Store API JSON as a blanket rule.
+- Never bypass the 25-entry collection-count bounds with unbounded fan-out.
+- Never disable nonce checks in production.
+- Never expose a variation or its reviews when the parent product is not publicly visible.
+- Apply rate limits and idempotency to public write-heavy flows.
+- Do not subclass Store API route internals; use documented helper functions or your own WP REST route.
 
 ## Cross-references
 
-- Run **`wc-rest-api-v4`** when the task is admin/integration REST, fulfillments, settings, private product/order data, or server-to-server API clients.
-- Run **`wc-customer-and-sessions`** when code uses `WC()->session`, `WC()->customer`, or needs to understand frontend/REST session bootstrapping.
-- Run **`wc-payment-gateway`** when Store API payment requirements intersect with a gateway's `$supports` and `process_payment()`.
-- Run **`wc-hpos-compatibility`** when checkout/order code stores custom order meta.
-- Run **`wp-rest-api`** when creating custom plugin endpoints outside Store API.
-
-## What this skill does NOT cover
-
-- Full React payment-method UI registration (`registerPaymentMethod`, express methods, saved-token components). This skill covers Store API server-side availability and data extension points.
-- Admin REST `wc/v4` route details. Use `wc-rest-api-v4`.
-- Store API internals/private route implementation. Internal classes are useful source references, not a public inheritance contract.
-- GraphQL or the newer dual-code API experiments in WC 10.8.
+- `wc-customer-and-sessions` for classic versus token sessions.
+- `wc-payment-gateway` for gateway support and payment completion.
+- `wc-checkout-block-payment-method` for Checkout Block payment UI and processing integration.
+- `wc-rest-api-v4` for authenticated merchant/admin CRUD.
+- `wc-hpos-compatibility` for order metadata and queries.
 
 ## References
 
-- Official Store API overview: <https://developer.woocommerce.com/docs/apis/store-api/>.
-- Store API nonce tokens: <https://developer.woocommerce.com/docs/apis/store-api/nonce-tokens/>.
-- Store API cart tokens: <https://developer.woocommerce.com/docs/apis/store-api/cart-tokens/>.
-- Extending Store API data: <https://developer.woocommerce.com/docs/apis/store-api/extending-store-api/extend-store-api-add-data/>.
-- Route registration: [wp-content/plugins/woocommerce/src/StoreApi/RoutesController.php](RoutesController.php).
-- Cart route headers/session/nonce rules: [wp-content/plugins/woocommerce/src/StoreApi/Routes/V1/AbstractCartRoute.php](AbstractCartRoute.php).
-- Store API authentication/CORS/rate limit logic: [wp-content/plugins/woocommerce/src/StoreApi/Authentication.php](Authentication.php).
-- Extension helpers: [wp-content/plugins/woocommerce/src/StoreApi/functions.php](functions.php) and [wp-content/plugins/woocommerce/src/StoreApi/Schemas/ExtendSchema.php](ExtendSchema.php).
-- `/cart/extensions`: [wp-content/plugins/woocommerce/src/StoreApi/Routes/V1/CartExtensions.php](CartExtensions.php) and [wp-content/plugins/woocommerce/src/StoreApi/Schemas/V1/CartExtensionsSchema.php](CartExtensionsSchema.php).
-- Product `related` query handling: [wp-content/plugins/woocommerce/src/StoreApi/Routes/V1/Products.php](Products.php) and [wp-content/plugins/woocommerce/src/StoreApi/Utilities/ProductQuery.php](ProductQuery.php).
+- Route registry and conditional route groups: `src/StoreApi/RoutesController.php`.
+- Nonce, token, and CORS behavior: `src/StoreApi/Authentication.php` and `Routes/V1/AbstractCartRoute.php`.
+- Deferred checkout lifecycle: `src/StoreApi/Routes/V1/Checkout.php`.
+- Public extension helpers: `src/StoreApi/functions.php` and `Schemas/ExtendSchema.php`.
+- Official documentation: <https://developer.woocommerce.com/docs/apis/store-api/>
+- Official documentation: <https://developer.woocommerce.com/docs/apis/store-api/nonce-tokens/>
+- Official documentation: <https://developer.woocommerce.com/docs/apis/store-api/cart-tokens/>
+- Verified source paths:
+  - `wp-content/plugins/woocommerce/src/StoreApi/SessionHandler.php`
