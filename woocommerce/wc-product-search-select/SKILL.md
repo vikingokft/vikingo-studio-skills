@@ -1,34 +1,13 @@
 ---
 name: wc-product-search-select
-description: Builds a WooCommerce-style AJAX product search select (the
-  selectWoo / wooselect dropdown) — class="wc-product-search" + the
-  data-action attribute pointing to woocommerce_json_search_products
-  (products only) or woocommerce_json_search_products_and_variations
-  (products AND variations, often the right choice). Pre-selected items
-  rendered server-side as <option selected> via wc_get_product() +
-  get_formatted_name(); WC's wc-enhanced-select script auto-enqueued on
-  WC admin screens, explicit enqueue required on non-WC pages. Solves
-  the "load 20k products into a select" antipattern AI assistants
-  commonly emit. Use when adding a product picker meta box, a custom
-  WC admin page selector, or any UI where the user must search and
-  pick from many products. Triggers on wc-product-search,
-  woocommerce_json_search_products, woocommerce_json_search_products_and_variations,
-  selectWoo, wc-enhanced-select, "select2 products in WooCommerce", or
-  product-picker meta box scaffolding.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: woocommerce
-plugin-version-tested: "10.8.0"
-php-min: "7.4"
-last-updated: "2026-05-26"
-docs:
-  - https://github.com/woocommerce/selectWoo
-  - https://woocommerce.com/document/woocommerce-json-search/
-source-refs:
-  - wp-content/plugins/woocommerce/includes/class-wc-ajax.php
-  - wp-content/plugins/woocommerce/includes/data-stores/class-wc-product-data-store-cpt.php
-  - wp-content/plugins/woocommerce/includes/admin/class-wc-admin-assets.php
-  - wp-content/plugins/woocommerce/assets/js/admin/wc-enhanced-select.js
+description: Builds a WooCommerce-style AJAX product search select (the selectWoo / wooselect dropdown) — class="wc-product-search" + the data-action attribute pointing to woocommerce_json_search_products (products only) or woocommerce_json_search_products_and_variations (products AND variations, often the right choice). Pre-selected items rendered server-side as pre-selected option markup via wc_get_product() + get_formatted_name(); WC's wc-enhanced-select script auto-enqueued on WC admin screens, explicit enqueue required on non-WC pages. Solves the "load 20k products into a select" antipattern AI assistants commonly emit. Use when adding a product picker meta box, a custom WC admin page selector, or any UI where the user must search and pick from many products. Triggers on wc-product-search, woocommerce_json_search_products, woocommerce_json_search_products_and_variations, selectWoo, wc-enhanced-select, "select2 products in WooCommerce", or product-picker meta box scaffolding.
+metadata:
+  wp-skills-author: "Soczó Kristóf"
+  wp-skills-contact: "mailto:lonsdale201@hotmail.com"
+  wp-skills-plugin: "woocommerce"
+  wp-skills-plugin-version-tested: "11.0.0"
+  wp-skills-php-min: "7.4"
+  wp-skills-last-updated: "2026-08-05"
 ---
 
 # WooCommerce: AJAX product search select (wooselect / selectWoo)
@@ -166,14 +145,16 @@ Pattern: `wc_get_product( $id )->get_formatted_name()` returns the WC-styled lab
 |---|---|---|
 | `data-placeholder` | Empty-state placeholder | `Search products…` |
 | `data-action` | Which AJAX action to call | `woocommerce_json_search_products_and_variations` |
-| `data-exclude` | Single ID or comma-list to exclude from results | Current post's ID, to prevent self-reference |
-| `data-include` | Restrict results to this ID list | Filter to a curated subset |
-| `data-limit` | Max results returned (server caps) | `100` (default 30, filter `woocommerce_json_search_limit`) |
+| `data-exclude` | ID or JSON array of IDs to exclude | `42` or `[42,43]` |
+| `data-include` | Restrict results to an ID or JSON array | `[12,15]` |
+| `data-limit` | Requested result limit | `100` (default 30, filter `woocommerce_json_search_limit`) |
 | `data-exclude_type` | Comma-list of product types to skip | `external,grouped` |
 | `data-display_stock` | Append " — Stock: N" to labels for managed-stock items | `1` |
 | `data-allow_clear` | Show a clear (x) control on single-value selects | `1` |
 | `data-minimum_input_length` | Override default 3-char minimum | `2` |
 | `data-sortable="true"` | Enable drag-sort on multi-select chips | `true` |
+
+Do not pass multiple IDs as a comma-separated string to `data-exclude` or `data-include`: the PHP handler casts the request to an array and then applies `absint`, so `"12,15"` collapses to `12`. Core emits multiple IDs as JSON (`[12,15]`), which jQuery parses into an array. `data-exclude_type` is the exception: its handler explicitly accepts a comma-delimited value.
 
 ### 5. Nonce is internal — don't reinvent
 
@@ -282,3 +263,4 @@ The IDs returned by the search endpoint are post IDs that may belong to either `
 - `WC_Data_Store::load( 'product' )->search_products()` — the underlying query method called by the AJAX handler. Worth reading if you need a programmatic equivalent of the AJAX search (e.g. WP-CLI command).
 - Product search query implementation: [wp-content/plugins/woocommerce/includes/data-stores/class-wc-product-data-store-cpt.php](class-wc-product-data-store-cpt.php) — `search_products()`.
 - selectWoo (WooCommerce's select2 fork): [github.com/woocommerce/selectWoo](https://github.com/woocommerce/selectWoo).
+- Official documentation: <https://woocommerce.com/document/woocommerce-json-search/>
