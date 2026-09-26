@@ -34,7 +34,9 @@ tudása. Az itteni minták kötelezők minden új Vikingo atomic widgetnél.
 | Működő Vikingo minták | `wp-plugin-vikingo-hu-tematika/src/Elementor/`, `wp-plugin-vikingo-ajanlas/src/Elementor/` |
 
 A referencia-repók verzióját Elementor-frissítéskor cserélni kell, és utána a
-9. pont ellenőrzőlistáját végigfutni. (Utolsó ismert állapot: 4.2.1.)
+9. pont ellenőrzőlistáját végigfutni. (Utolsó ismert állapot: Elementor 4.3.2,
+Pro 4.3.0 - 2026-09-26. A platform repo `docs/elementor*/` mappája - gitignore-olt -
+ugyanezt a verziót tartja; frissítéskor a kettő együtt cserélendő.)
 
 ## 2. Regisztráció és guardok
 
@@ -140,7 +142,10 @@ Kritikus tudnivalók:
 ## 5. A twig sablon szerződése
 
 A `Has_Template::render()` kontextusa: `id`, `interaction_id`, `type`,
-`settings`, `base_styles`. A Vikingo sablon-minta:
+`settings`, `tag` (4.3-tól), `base_styles`. A `tag` a
+`get_computed_html_tag( $settings )` eredménye: ha a sémában core-alakú `link`
+prop van élő href-fel, `a`; ha `tag` prop van, annak értéke; különben `div`.
+A Vikingo sablonok a `tag`-et nem használják (a gyökér mindig `div`). A Vikingo sablon-minta:
 
 ```twig
 {% set classes = settings.classes | default([]) | join(' ') %}
@@ -205,7 +210,7 @@ Frissítéskor a referencia-repókat lecserélni, majd ellenőrizni:
 - [ ] `Atomic_Widget_Base` és `Has_Template` létezik-e még ugyanazon a néven
       (`elements/base/`), változott-e a konstruktor vagy az absztrakt metódusok.
 - [ ] A `Has_Template::render()` twig kontextus-kulcsai változatlanok-e
-      (`id`, `interaction_id`, `type`, `settings`, `base_styles`).
+      (`id`, `interaction_id`, `type`, `settings`, `tag`, `base_styles`).
 - [ ] A használt controlok (`Select_Control::set_options` formátum!) és prop
       típusok megvannak-e.
 - [ ] Az `e_atomic_elements` experiment neve/állapota változott-e
@@ -230,5 +235,17 @@ Frissítéskor a referencia-repókat lecserélni, majd ellenőrizni:
   jön, a vásznon csak REST-hidratálással jelenik meg.
 - **Üres widget a frontenden, hiba nélkül**: a `Has_Template::render()`
   try/catch-e nyelte le — `ELEMENTOR_DEBUG` mellett újratesztelni.
+- **`link` / `tag` nevű prop (4.3-tól)**: a core `Html_Tag_Computer` ezekből
+  számolja a `tag` kontextus-kulcsot és a szerkesztői `default_html_tag`-et. A
+  string típusú `link` prop ártalmatlan (csak tömb alakú, href-es link billent
+  `a`-ra), de új widgetben ne adj ilyen nevet core-tól eltérő jelentéssel.
+- **Default Styles (4.3-tól)**: az Elementor globális HTML-tag stílusai
+  `.e-default-{tag}` osztályon át hatnak, amit csak a core sablonok
+  `_macros.html.twig`-je rak ki. A `rendered_html`-t beillesztő Vikingo
+  widgeteket NEM érintik - ez szándékos, a widget saját CSS-e dönt.
+- **Elementor MCP (4.3-tól)**: minden prop típus `to_json_schema()`-t kapott,
+  így a V4 widgetjeink az MCP-ben szerkeszthető elemként látszanak (a V3-at az
+  MCP elutasítja). Saját prop típust ezért a core ősből származtass, hogy a
+  JSON-sémája öröklődjön.
 - **File:// alapú headless Chrome teszt megbízhatatlan** — vizuális
   ellenőrzéshez mindig `php -S` szerver + Playwright (channel: chrome).
