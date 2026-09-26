@@ -70,6 +70,18 @@ $atomic_ok   = $experiments && $experiments->is_feature_active( 'e_atomic_elemen
 és a `$widgets_manager->register()` hívás `try/catch (\Throwable)` blokkban,
 hogy egy Elementor-frissítés okozta törés soha ne legyen fatal, csak fallback.
 
+**A kimaradás nem lehet csendes.** A try/catch és az Elementor saját
+sablon-renderelője is elnyeli a hibát, élesen gyakran PHP-napló sincs, így a
+widget helyén egyszerűen üres hely marad minden oldalon. A bevált minta
+(vk-vikingo-hu-platform 0.58.8, `Kernel\Elementor\Registrar` + `Allapot`):
+minden widget EGY közös regisztrálón megy (widget-gyárakkal), amely a hibákat
+összegyűjti; a `elementor/widgets/register` `PHP_INT_MAX` prioritásán az
+eredmény optionbe kerül (csak változáskor írva). Az Elementor / Pro / bővítmény
+verzió-ujjlenyomatának változásakor egy WP-Cron feladat minden widgetet
+alapbeállítással példányosít és lerenderel (`create_element_instance` +
+`print_element`); az üres vagy kivételt dobó widget hiba. Hibánál tartós
+admin-értesítés „Ellenőrzés újra” gombbal.
+
 ## 3. A widget anatómiája
 
 ```php
@@ -131,6 +143,11 @@ Kritikus tudnivalók:
 | `Link_Prop_Type` | `Link_Control` | |
 | `Classes_Prop_Type` | – | kötelező, az Elementor kezeli |
 
+- **Minden propnak legyen leírása** (`->description( __( '…' ) )`, Elementor
+  4.2-ben is létező metódus; a 4.3-tól az Elementor MCP / LLM-séma ebből
+  dolgozik). Mit csinál, milyen értéket vár (slug, ID, URL), mit jelent az
+  üres vagy a 0; enum nélküli választónál az érvényes értékek is. Ciklusban
+  készülő propoknál a leírás a címke-listából épüljön (sprintf).
 - `Select_Control::set_options()` formátuma:
   `array( array( 'value' => 'x', 'label' => 'X' ), … )` — NEM kulcs=>érték!
 - A controlok `Section::make()->set_label()->set_id()->set_items([...])`
@@ -218,6 +235,11 @@ Frissítéskor a referencia-repókat lecserélni, majd ellenőrizni:
 - [ ] Éles teszt: widget behúzása a szerkesztőben, beállítás-változtatás
       (hidratálás frissül-e), mentés, frontend render, shortcode render.
 - [ ] `ELEMENTOR_DEBUG` bekapcsolásával nincs-e lenyelt twig-kivétel.
+- [ ] Pillanatkép előtte / utána a klónon (vk-vikingo-hu-platform
+      `docs/widget-pillanatkep/`): cím, séma, vezérlők, config és
+      alapbeállítású kimenet – az elvárt eredmény 0 eltérés.
+- [ ] Élesen az állapotfigyelő próbája (admin-értesítés nincs, vagy
+      „Ellenőrzés újra” után „mind a N widget rendben”).
 
 ## 10. Ismert buktatók
 
@@ -247,5 +269,9 @@ Frissítéskor a referencia-repókat lecserélni, majd ellenőrizni:
   így a V4 widgetjeink az MCP-ben szerkeszthető elemként látszanak (a V3-at az
   MCP elutasítja). Saját prop típust ezért a core ősből származtass, hogy a
   JSON-sémája öröklődjön.
+- **A `Has_Template::render()` csak `\Exception`-t nyel le, `\Error`-t nem**
+  (Elementor 4.3.2): egy TypeError vagy hívás nem létező metódusra a
+  `get_atomic_settings()`-ben a látogatónál végzetes hiba. A renderelő kód
+  típusai legyenek szigorúan kezelve, és a próba (`\Throwable`) ezt is elkapja.
 - **File:// alapú headless Chrome teszt megbízhatatlan** — vizuális
   ellenőrzéshez mindig `php -S` szerver + Playwright (channel: chrome).
