@@ -8,16 +8,14 @@ description: Build WordPress admin drag-and-drop UI with core's bundled
   reorder controls. Use when plugin admin pages need repeater row order,
   builder blocks, rule priority, kanban moves, custom field arrangers,
   pricing tiers, taxonomy term sort, or any non-React draggable admin UI.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: "6.0 - 7.0"
-php-min: "7.4"
-last-updated: "2026-05-24"
-docs:
-  - https://api.jqueryui.com/sortable/
-  - https://api.jqueryui.com/draggable/
-  - https://api.jqueryui.com/droppable/
+metadata:
+  wp-skills-author: "Soczó Kristóf"
+  wp-skills-contact: "mailto:lonsdale201@hotmail.com"
+  wp-skills-plugin: "wordpress"
+  wp-skills-plugin-version-tested: "6.0 - 7.1"
+  wp-skills-wp-version-tested: "7.1"
+  wp-skills-php-min: "7.4"
+  wp-skills-last-updated: "2026-08-20"
 ---
 
 # WordPress Admin Drag-and-Drop
@@ -77,9 +75,9 @@ add_action( 'admin_enqueue_scripts', static function ( string $hook_suffix ): vo
 
 | Handle | Version | When you need it |
 |---|---|---|
-| `jquery-ui-sortable` | 1.13.3 | Any reorderable list |
-| `jquery-ui-draggable` | 1.13.3 | Palette items / freely-dragged elements |
-| `jquery-ui-droppable` | 1.13.3 | Drop targets that aren't sortable lists (trash zone, status bucket) |
+| `jquery-ui-sortable` | 1.14.2 in WP 7.1 | Any reorderable list |
+| `jquery-ui-draggable` | 1.14.2 in WP 7.1 | Palette items / freely-dragged elements |
+| `jquery-ui-droppable` | 1.14.2 in WP 7.1 | Drop targets that aren't sortable lists (trash zone, status bucket) |
 | `jquery-touch-punch` | n/a | Touch device support for any of the above |
 | `wp-a11y` | n/a | `wp.a11y.speak()` for screen reader announcements |
 
@@ -108,13 +106,19 @@ jQuery( function ( $ ) {
         tolerance: 'pointer',
         forcePlaceholderSize: true,
         update: function () {
+            const $list = $( this );
             const order = $( this ).sortable( 'toArray', { attribute: 'data-rule-id' } );
+            $list.sortable( 'disable' );
             wp.apiFetch( {
                 path: '/myplugin/v1/rules/order',
                 method: 'POST',
                 data: { order },
-            } );
-            wp.a11y.speak( wp.i18n.__( 'Order saved.', 'myplugin' ) );
+            } ).then( () => {
+                wp.a11y.speak( wp.i18n.__( 'Order saved.', 'myplugin' ) );
+            } ).catch( () => {
+                wp.a11y.speak( wp.i18n.__( 'Order was not saved. Reloading.', 'myplugin' ) );
+                window.location.reload(); // Restore canonical server order.
+            } ).finally( () => $list.sortable( 'enable' ) );
         },
     } );
 } );
@@ -149,8 +153,12 @@ $columns.sortable( {
             path: '/myplugin/v1/cards/order',
             method: 'POST',
             data: payload,
+        } ).then( () => {
+            wp.a11y.speak( wp.i18n.__( 'Board updated.', 'myplugin' ) );
+        } ).catch( () => {
+            wp.a11y.speak( wp.i18n.__( 'Board was not saved. Reloading.', 'myplugin' ) );
+            window.location.reload();
         } );
-        wp.a11y.speak( wp.i18n.__( 'Board updated.', 'myplugin' ) );
     },
 } );
 ```
@@ -162,46 +170,15 @@ The critical gotcha: a cross-list move fires `update` on **both** the sender and
 When you have a fixed library of items on one side, drop zones on the other. The palette item stays put (it clones); a new item lands in the drop zone. Plugin use cases: block library, action library for a logic builder, available-tags panel, condition builder.
 
 ```js
-// Palette items — Draggable with helper:'clone' so originals stay.
-$( '#myplugin-palette' ).children( '.palette-item' ).draggable( {
-    connectToSortable: '.dropzone',
-    handle: '.palette-item-title',
-    helper: 'clone',
-    distance: 2,
-    zIndex: 101,
-    containment: '#wpwrap',
-    refreshPositions: true,
-} );
-
-// Drop zones — Sortable. Receive event fires when a dragged palette item lands.
-$( '.dropzone' ).sortable( {
-    // Include the palette clone while it is being received; convert it below.
-    items: '> .placed-item, > .palette-item',
-    handle: '.placed-item-title, .palette-item-title',
-    placeholder: 'dropzone-placeholder',
-    receive: function ( event, ui ) {
-        // ui.item is the clone that just arrived. Convert the palette stub
-        // into a real item via REST, then replace the placeholder HTML.
-        const paletteId = ui.item.data( 'palette-id' );
-        ui.item.addClass( 'is-loading' );
-        wp.apiFetch( {
-            path: '/myplugin/v1/items',
-            method: 'POST',
-            data: { palette_id: paletteId, zone_id: this.id },
-        } ).then( ( placed ) => {
-            ui.item.replaceWith( placed.html );
-        } ).catch( () => {
-            ui.item.remove();
-            wp.a11y.speak( wp.i18n.__( 'Item could not be added.', 'myplugin' ) );
-        } );
-    },
-} );
+// Draggable owns connectToSortable; the palette remains because helper is a clone.
+$paletteItems.draggable( { connectToSortable: '.dropzone', helper: 'clone' } );
+$dropzones.sortable( { receive: convertCloneToPersistedItem } );
 ```
 
-Two options worth calling out:
-
-- `connectToSortable` is a **Draggable** option, NOT a Sortable option. It points the draggable at a Sortable that should accept it.
-- `helper: 'clone'` is what makes the palette behave like a palette. Without it the source item moves out of the palette.
+`connectToSortable` belongs to Draggable, and `helper: 'clone'` keeps the source
+item. `receive` must persist the new item, replace the temporary clone only on
+success, and remove it on failure. The complete async example is in
+`reference.md`.
 
 ## Pattern 4 — hierarchical / nested (parent + child indentation)
 
@@ -210,7 +187,10 @@ When you need tree behavior with depth indentation that updates *while dragging*
 The algorithm:
 
 - Depth is rendered as `margin-left: depth * STEP_PX` (or as a `.item-depth-N` class). NOT as nested `<ul>` markup.
-- During drag: read the helper's x-offset, divide by step px, clamp to `[0, MAX_DEPTH]`, and rewrite the item's depth class on every `sort` callback.
+- During drag: read the helper's x-offset and clamp not only to
+  `[0, MAX_DEPTH]`, but also to the structural limit: at most one level deeper
+  than the previous visible row. Account for the dragged subtree so no child
+  exceeds `MAX_DEPTH`.
 - Children = following siblings whose depth is greater than the dragged item. At drag-start, detach them into a transport element so the placeholder sizes correctly; at drag-stop, re-insert them after the parent and shift their depth classes by the same delta.
 
 When persisting: walk the DOM in order, each item's parent is "the previous item with depth = current depth − 1". Server side this collapses to a flat list with `parent_id` per row.
@@ -229,9 +209,17 @@ $( '#trash-zone' ).droppable( {
     tolerance: 'pointer',
     drop: function ( event, ui ) {
         const id = ui.draggable.data( 'item-id' );
-        ui.draggable.fadeOut( 150, () => ui.draggable.remove() );
-        wp.apiFetch( { path: `/myplugin/v1/items/${ id }`, method: 'DELETE' } );
-        wp.a11y.speak( wp.i18n.__( 'Item deleted.', 'myplugin' ) );
+        ui.draggable.addClass( 'is-pending' ).attr( 'aria-disabled', 'true' );
+        wp.apiFetch( {
+            path: `/myplugin/v1/items/${ id }`,
+            method: 'DELETE',
+        } ).then( () => {
+            ui.draggable.fadeOut( 150, () => ui.draggable.remove() );
+            wp.a11y.speak( wp.i18n.__( 'Item deleted.', 'myplugin' ) );
+        } ).catch( () => {
+            ui.draggable.removeClass( 'is-pending' ).removeAttr( 'aria-disabled' );
+            wp.a11y.speak( wp.i18n.__( 'Item could not be deleted.', 'myplugin' ) );
+        } );
     },
 } );
 ```
@@ -240,7 +228,13 @@ Useful even when you don't need a "trash" — same pattern works for "click-drag
 
 ## Persisting order — REST, not admin-ajax
 
-Don't reach for `admin-ajax.php` for new endpoints. Use REST with a real `permission_callback`, an `args` schema (`order` as an integer array, usually sanitized with `wp_parse_id_list`), and `wp-api-fetch` on the client. `wp-api-fetch` attaches `X-WP-Nonce` automatically when declared as a script dependency.
+Don't reach for `admin-ajax.php` for new endpoints. Use REST with a real
+`permission_callback`, validation plus sanitization (`order` as a positive
+integer array), and `wp-api-fetch` on the client. Server-side, verify that the
+submitted IDs are the complete allowed set for that user/container: an args
+schema cannot detect omitted, foreign, or duplicate business objects.
+`wp-api-fetch` attaches `X-WP-Nonce` for the standard cookie-authenticated
+WordPress setup when its nonce middleware is configured by core.
 
 ## Accessibility — match the postbox keyboard pattern
 
@@ -250,11 +244,21 @@ Use real buttons, not only a draggable handle. The click handler moves the row i
 
 ## Touch support
 
-jQuery UI 1.13's drag handlers are mouse-only. For touch devices, add `jquery-touch-punch` as a dep — it patches jQuery UI mouse interactions to also accept touch events. It's already registered in core (loaded by Iris, the color picker thumb), so declaring it as a dep is enough.
+jQuery UI's drag handlers remain mouse-oriented. For touch devices, add `jquery-touch-punch` as a dep — it patches jQuery UI mouse interactions to also accept touch events. It's registered in core, so declaring it as a dep is enough. Test real touch and keyboard behavior: the old patch is compatibility support, not a modern pointer-events accessibility layer.
+
+WordPress 7.1 updates the bundled jQuery UI components from 1.13.3 to 1.14.2
+and sets `jQuery.uiBackCompat = true` before `jquery-ui-core`. The documented
+widget APIs used in this skill remain available, but plugin code that reaches
+into underscored widget methods, copied internals, DOM-generated class details,
+or deprecated `$.ui.plugin` behavior must be regression-tested. Core's
+back-compat flag is not a promise that private internals are stable.
 
 ## Critical rules
 
-- **Don't bundle SortableJS / dnd-kit / Dragula** for plain admin UI. WP's primitives cover every pattern above. (Exception: React-rendered surfaces — block editor, custom React islands — where `@dnd-kit/core` is idiomatic.)
+- **Prefer core's jQuery UI handles for conventional PHP-rendered admin UI**.
+  Complex pointer/touch interactions or React-rendered surfaces may justify a
+  maintained external library; account for its bundle, accessibility, and
+  lifecycle costs explicitly.
 - **Always provide a keyboard reorder path**. Pointer-only D&D fails WCAG. Postbox-style move-up / move-down buttons + `wp.a11y.speak` is the WP pattern; match it.
 - **`update` fires on both the sender and the receiver** during a cross-list move. Dedupe on `ui.sender` or you'll double-save.
 - **`receive` runs BEFORE `update` on the receiving list**. Convert palette stubs into real items in `receive`, persist final order in `update`.
@@ -286,5 +290,11 @@ You don't need to read these to use the patterns above — they're listed for wh
 - `wp-admin/js/postbox.js` — flat sortable (init at line 369), keyboard reorder buttons (line 98).
 - `wp-admin/js/widgets.js:195` and `:271` — palette + drop-zone pattern.
 - `wp-admin/js/nav-menu.js:885` — hierarchical sortable with depth math.
-- `wp-includes/script-loader.php:955-959` — the `jquery-ui-draggable`, `jquery-ui-droppable`, `jquery-ui-sortable` registrations.
+- `wp-includes/script-loader.php` — the `jquery-ui-draggable`, `jquery-ui-droppable`, `jquery-ui-sortable` registrations and bundled version.
 - `reference.md` — hierarchical tree snippet, keyboard reorder snippet, and common mistakes.
+
+## References
+
+- Official documentation: <https://api.jqueryui.com/sortable/>
+- Official documentation: <https://api.jqueryui.com/draggable/>
+- Official documentation: <https://api.jqueryui.com/droppable/>
