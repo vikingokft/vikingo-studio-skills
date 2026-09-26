@@ -5,6 +5,15 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 ## [Unreleased]
 
 ### Added
+- **`vikingo-elementor-ready-design` skill:** irányelvek AI-val generált weboldal-dizájnhoz
+  úgy, hogy az utána Elementorban gyorsan és pontosan lefejleszthető legyen. Csak a
+  rendszer-réteget kötözi meg, a kreatív irányba nem szól bele: pixel alapú type scale,
+  8-as spacing skála (nincs 13/27/35px), max 11 globális szín (egy primary + egy accent),
+  csak Google Fonts, Font Awesome kompatibilis ikonok, Elementor default breakpointok
+  (767 / 1024 / 1366), gap-first szemlélet egyedi marginok helyett. Két kötelező átadási
+  kimenet: `DESIGN-TOKENS.md` (a Site Settings-be másolható spec) és egy élő `/arculat`
+  oldal, ami a valódi CSS tokenekből renderel, így nem tud elavulni. Referenciák: token-
+  sablon, Elementor Site Settings beállítási sorrend, arculat-oldal szekciólista + váz.
 - **MCP-szerver manifest (`mcp.conf`) + telepítő-lépés:** az `install-skills.sh`
   a skillek mellé a felsorolt MCP-szervereket is regisztrálja a Claude Code-ba
   user hatókörrel (újrafuttatás-biztos, a már regisztráltat kihagyja). Első
