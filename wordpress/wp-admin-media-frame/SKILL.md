@@ -9,16 +9,14 @@ description: Open the standard WordPress Media Library picker from plugin
   frame caching, pre-selecting existing attachments, and saving attachment
   IDs instead of URLs. Use for image, file, gallery, logo, avatar, cover,
   or per-row icon pickers in settings pages, metaboxes, and repeaters.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: "6.0 - 7.0"
-php-min: "7.4"
-last-updated: "2026-05-24"
-docs:
-  - https://developer.wordpress.org/reference/functions/wp_enqueue_media/
-  - https://developer.wordpress.org/reference/functions/wp_prepare_attachment_for_js/
-  - https://codex.wordpress.org/Javascript_Reference/wp.media
+metadata:
+  wp-skills-author: "Soczó Kristóf"
+  wp-skills-contact: "mailto:lonsdale201@hotmail.com"
+  wp-skills-plugin: "wordpress"
+  wp-skills-plugin-version-tested: "6.0 - 7.1"
+  wp-skills-wp-version-tested: "7.1"
+  wp-skills-php-min: "7.4"
+  wp-skills-last-updated: "2026-08-20"
 ---
 
 # WordPress Admin Media Picker (`wp.media`)
@@ -61,7 +59,10 @@ add_action( 'admin_enqueue_scripts', static function ( string $hook_suffix ): vo
 } );
 ```
 
-`media-editor` is the script handle that defines `window.wp.media`. Declare it as a dep so your JS loads after it. (You can also depend on `media-views`, but `media-editor` is the smaller surface that suffices for opening a frame.)
+Declare `media-editor` as a dependency because it supplies the editor-facing
+media API and depends on the underlying `media-views` stack. It is not a
+lightweight alternative to that stack; `wp_enqueue_media()` loads the media
+models, views, settings, templates, and styles required by the frame.
 
 ### 2. The HTML scaffold
 
@@ -124,9 +125,9 @@ jQuery( function ( $ ) {
             const thumb = attachment.sizes && attachment.sizes.thumbnail
                 ? attachment.sizes.thumbnail.url
                 : attachment.url;
-            $( '.myplugin-image-preview' ).html(
-                '<img src="' + thumb + '" alt="" />'
-            );
+            $( '.myplugin-image-preview' )
+                .empty()
+                .append( $( '<img>', { src: thumb, alt: '' } ) );
         } );
 
         frame.open();
@@ -146,9 +147,7 @@ jQuery( function ( $ ) {
 
 ## Filtering the library
 
-The `library` attribute is a `wp.media.query` filter. Common shapes:
-
-Common shapes: `library: { type: 'image' }`, `library: { type: [ 'image', 'video' ] }`, `library: { type: 'application/pdf' }`, `library: { uploadedTo: postId }`, and `library: { author: MyPluginMedia.currentUserId }`.
+The `library` attribute is a `wp.media.query` filter. Common shapes: `library: { type: 'image' }`, `library: { type: [ 'image', 'video' ] }`, `library: { type: 'application/pdf' }`, `library: { uploadedTo: postId }`, and `library: { author: MyPluginMedia.currentUserId }`.
 
 Localize `MyPluginMedia.currentUserId` from PHP with `get_current_user_id()` if you need an author filter. Do not read it from `wp.media.view.settings.post.featuredImageId` — that value is an attachment/post ID, not a user ID.
 
@@ -201,7 +200,7 @@ frame.on( 'open', function () {
 
 ## What you get from `selection.first().toJSON()`
 
-The same shape `wp_prepare_attachment_for_js()` returns server-side (`wp-includes/media.php:4508` in WP 7.0). Useful fields for plugin code:
+The same shape `wp_prepare_attachment_for_js()` returns server-side. Useful fields for plugin code:
 
 | Field | What it is |
 |---|---|
@@ -235,9 +234,20 @@ function getDisplayUrl( attachment, sizeName = 'thumbnail' ) {
 
 Use `select` for actual picks, `open` for preselecting an existing attachment, and `close` only for cleanup or refocusing. Do not save on `close`; cancellation fires it too. See `reference.md` for the event table.
 
+WordPress 7.1 enables Media Library infinite scrolling by default, with a
+per-user opt-out and the `media_library_infinite_scrolling` filter. Do not assume
+all attachments or a final page are already loaded into a frame collection.
+Read `reference.md` for preference/filter precedence and test implications.
+
 ## Saving and rendering server-side
 
-Save the **ID**, never the URL. Sanitize with `absint()` plus an attachment post-type check, render with `wp_get_attachment_image()`, and use `wp_get_attachment_image_url( $id, $size )` only when you truly need a raw URL. See `reference.md` for the snippets.
+Save the **ID**, never the URL. Sanitize with `absint()`, verify that it is an
+attachment of the allowed MIME/type, and enforce the authorization appropriate
+to the setting (for example, whether the current user may use or edit that
+attachment). A `post_type = attachment` check alone does not establish access
+or image-ness. Render with `wp_get_attachment_image()` and use
+`wp_get_attachment_image_url( $id, $size )` only when you truly need a raw URL.
+See `reference.md` for the snippets.
 
 ## Critical rules
 
@@ -263,6 +273,7 @@ Use one cached frame, but track the active row before opening it. On `select`, w
 - See **`wp-plugin-assets-loading`** for the `$hook_suffix` enqueue gate.
 - See **`wp-admin-settings-api`** when the picker lives inside an options page; the hidden input goes through the `sanitize_callback`.
 - See **`wp-admin-drag-and-drop`** when building a gallery with reorderable thumbnails — `wp.media` gives you the IDs, sortable gives you the order.
+- See **`wp-client-side-media-processing`** for WordPress 7.1 browser-side image processing and REST finalization; it is separate from selecting an existing attachment.
 
 ## What this skill does NOT cover
 
@@ -273,9 +284,11 @@ Use one cached frame, but track the active row before opening it. On `select`, w
 
 ## References
 
-- `wp-includes/media.php:4766` — `wp_enqueue_media()` source.
-- `wp-includes/media.php:4508` — `wp_prepare_attachment_for_js()`, the source of the JSON shape you receive.
-- `wp-includes/js/media-models.js:1412` — `wp.media = function( attributes )` entry point; the frame-type switch starts here.
+- `wp-includes/media.php` — `wp_enqueue_media()`, `wp_prepare_attachment_for_js()`, and Media Library settings.
+- `wp-includes/js/media-models.js` — `wp.media()` entry point and frame-type switch.
 - `wp-includes/js/media-views.js` — the Backbone views; useful when you actually need to subclass.
 - `wp-includes/script-loader.php` — `media-editor`, `media-views`, `media-models` handle registrations.
 - `reference.md` — server render snippets, event table, per-row picker, and common mistakes.
+- Official documentation: <https://developer.wordpress.org/reference/functions/wp_enqueue_media/>
+- Official documentation: <https://developer.wordpress.org/reference/functions/wp_prepare_attachment_for_js/>
+- Official documentation: <https://codex.wordpress.org/Javascript_Reference/wp.media>
