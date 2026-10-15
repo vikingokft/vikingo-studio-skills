@@ -54,6 +54,7 @@ git pull && ./install-skills.sh
 |---|---|---|
 | `vikingo-szabvany` | Vikingo plugin- és repo-szabvány: elnevezések, header, struktúra, release, checklist | `vikingo/` |
 | `vikingo-stilus` | Vikingo házi stílus: magyar hangnem, helyesírás, terminológia, üzenet-minták, i18n technika | `vikingo/` |
+| `vikingo-elementor-ready-design` | Elementorba átadható dizájnrendszer: px type scale, 8-as spacing, korlátozott paletta, DESIGN-TOKENS.md + /arculat oldal | `vikingo/` |
 
 Ezek kézzel karbantartott skillek, nem a napi szinkron hozza őket. Módosításuk PR-rel történik.
 
