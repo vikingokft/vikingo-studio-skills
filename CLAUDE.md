@@ -6,8 +6,14 @@ A Vikingo Studio **kurált agent-skill gyűjteménye** Claude Code-hoz. Több me
 upstream forrásból válogat össze skilleket egy helyre, és naprakészen tartja őket.
 Emellett egyetlen SAJÁT domain van, a `vikingo/`: itt élnek a Vikingo Studio saját,
 kézzel karbantartott skilljei (`vikingo-szabvany` = szerkezet és elnevezések,
-`vikingo-stilus` = magyar nyelv és hangnem). A `vikingo/` NEM szerepel a
-sources.conf-ban, a napi sync nem nyúl hozzá; kézzel, PR-rel módosítjuk.
+`vikingo-stilus` = magyar nyelv és hangnem). A `vikingo/` mappát a napi sync nem
+érinti, nincs hozzá vendored sor a sources.conf-ban; kézzel, PR-rel módosítjuk.
+Egy saját skill kivétel: a `vikingo-design` (a Vikingo arculat egyetlen forrása) nem
+ebben a repóban él, hanem a Vikingo saját, PRIVÁT `vikingokft/vikingo-design-system`
+repójában a tokenekkel és az eszközökkel együtt. Ezt external sorként húzzuk
+(`skill` mappa, `to` = `vikingo`, ami itt csak besorolás, semmi nem kerül be a
+`vikingo/` mappába). A klónozáshoz GitHub-belépés kell a gépen (`gh auth login`,
+majd `gh auth setup-git`); nélküle az `install-skills.sh` figyelmeztetéssel kihagyja.
 Minden saját skill neve kötelezően `vikingo-` kezdetű, így a külső forrásokkal
 sosem ütközik, és a lapos symlink-névtérben ránézésre látszik, melyik a miénk.
 
@@ -21,6 +27,9 @@ A skillek a forrás licencétől függően kétféleképpen kerülnek a felhaszn
   újraosztás jogsértő lenne). Az `install-skills.sh` telepítéskor a felhasználó gépére
   klónozza őket az eredeti repóból a `.external/` mappába (git-ignorált), és onnan
   symlinkeli. Így a felhasználónál ott vannak, de ez a repó nem osztja újra őket.
+  Másik eset: a Vikingo saját privát repója (`vikingo-design-system`). Ezt nem licenc
+  miatt, hanem azért húzzuk external módban, mert a saját repójában él, és nem
+  akarunk belőle másolatot ebben a nyilvános repóban.
 
 **Aranyszabály új forrásnál:** ha nincs nyílt repo-szintű LICENSE → `external`. Soha ne
 másolj be licenc nélküli tartalmat a repóba.
@@ -37,7 +46,8 @@ vikingo-studio-skills/
 │   ├── upstream-sync.yml    — NAPI sync → PR → high-trust auto-merge
 │   └── validate.yml         — SKILL.md frontmatter lint (required check)
 ├── licenses/               — a vendored források LICENSE-ei (Apache/MIT megőrzés)
-├── vikingo/                — SAJÁT skillek (vikingo-szabvany), nem synceljük
+├── vikingo/                — SAJÁT skillek (vikingo-szabvany, vikingo-stilus), nem synceljük
+│                             (a vikingo-design external, nem itt él)
 │                             kézzel karbantartott, PR-rel módosul
 ├── wordpress/ woocommerce/ jet-engine/ plugin-scaffold/ wp-rocket/
 │                           — vendored: WordPress készlet (Lonsdale201/wp-agent-skills)

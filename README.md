@@ -61,7 +61,7 @@ git pull && ./install-skills.sh
 
 Ezek kézzel karbantartott skillek, nem a napi szinkron hozza őket. Módosításuk PR-rel történik.
 
-A `vikingo-design` nincs bemásolva ebbe a repóba: a saját repójában (`vikingokft/vikingo-design-system`) él a tokenekkel és az eszközökkel együtt, és az `install-skills.sh` telepítéskor klónozza (external sor a `sources.conf`-ban). A repó **privát**, ezért a gépen GitHub-belépés kell hozzá: `gh auth login`, majd `gh auth setup-git`.
+A `vikingo-design` nincs bemásolva ebbe a repóba: a saját repójában (`vikingokft/vikingo-design-system`) él a tokenekkel és az eszközökkel együtt, és az `install-skills.sh` telepítéskor klónozza (external sor a `sources.conf`-ban). A repó **privát**, ezért a gépen GitHub-belépés kell hozzá: `gh auth login`, majd `gh auth setup-git`. Belépés nélkül a telepítő figyelmeztetéssel kihagyja, a többi skill ettől még települ.
 
 ### Bemásolt (vendored) — nyílt licenc
 

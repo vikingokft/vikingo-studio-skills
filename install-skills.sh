@@ -53,11 +53,19 @@ if [ -f "$SRC_CONF" ]; then
     clone="$EXT_DIR/$id"
     if [ -d "$clone/.git" ]; then
       echo "→ [$id] frissítés (git pull)"
-      git -C "$clone" pull --quiet --ff-only 2>/dev/null || echo "  ⚠ pull sikertelen, a meglévő klónt használom"
+      GIT_TERMINAL_PROMPT=0 git -C "$clone" pull --quiet --ff-only 2>/dev/null || echo "  ⚠ pull sikertelen, a meglévő klónt használom"
     else
       echo "→ [$id] klónozás: $repo ($ref)"
-      git clone --quiet --depth 1 --branch "$ref" --single-branch "$repo" "$clone" 2>/dev/null \
-        || git clone --quiet --depth 1 "$repo" "$clone"
+      # Miért: egy privát forrás (pl. vikingo-design-system) GitHub-belépés nélkül
+      # nem klónozható. A GIT_TERMINAL_PROMPT=0 miatt a git nem kér felhasználónevet,
+      # a hibát pedig elnyeljük, hogy a többi forrás, az MCP-lépés és a takarítás
+      # ilyenkor is lefusson.
+      if ! GIT_TERMINAL_PROMPT=0 git clone --quiet --depth 1 --branch "$ref" --single-branch "$repo" "$clone" 2>/dev/null \
+        && ! GIT_TERMINAL_PROMPT=0 git clone --quiet --depth 1 "$repo" "$clone" 2>/dev/null; then
+        rm -rf "$clone"
+        echo "  ⚠ [$id] klónozás sikertelen (privát repó? futtasd: gh auth login, majd gh auth setup-git), kihagyva"
+        continue
+      fi
     fi
     ext=0
     if [ -d "$clone/$from" ]; then

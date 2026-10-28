@@ -10,6 +10,9 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
   a `sources.conf` új external sora alapján klónozza, és a `skill/vikingo-design`
   mappát symlinkeli. Előfeltétel: GitHub-belépés a gépen (`gh auth login`,
   `gh auth setup-git`). README és INSTALL kiegészítve.
+- **`install-skills.sh`:** egy external forrás sikertelen klónozása (pl. a privát
+  repó belépés nélkül) már nem állítja le a telepítést: a forrást figyelmeztetéssel
+  kihagyja, és nem kér felhasználónevet a terminálban (`GIT_TERMINAL_PROMPT=0`).
 - **`vikingo-klon` skill:** a kollégák munkakezdése a vikingo.hu-n és a
   vikingo.studio-n: melyik repót töltsék le, melyik a klón, hogyan frissül
   az élesről, mire figyeljenek (valódi levél, éles adat a mentésben). A

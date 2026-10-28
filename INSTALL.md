@@ -49,6 +49,10 @@ gh auth setup-git  # a git is a gh-belépést használja
 
 Kell hozzá, hogy a fiókod hozzáférjen a `vikingokft` szervezet repóihoz.
 
+Ha ez hiányzik, a telepítő nem áll le: a `vikingo-design` skillt figyelmeztetéssel
+kihagyja, a többi skill és az MCP-szerverek rendben települnek. A belépés után futtasd
+újra az `./install-skills.sh`-t, és a `vikingo-design` is megjelenik.
+
 ---
 
 ## Telepítés — 3 parancs
