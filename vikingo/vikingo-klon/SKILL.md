@@ -26,7 +26,7 @@ kerül változás.
 | Oldal | Repók (`~/Documents/Github` alá) | Klón | Kezdd itt |
 |---|---|---|---|
 | vikingo.hu (kurzus) | `wp-plugin-vikingo-hu-platform`, `wp-plugin-vikingo-hu-adatplatform` | `devvikingo.local` | platform repó: `docs/klon-frissites.md`, „Új gépen először” |
-| vikingo.studio (ügynökség) | `site-vikingo-studio`, `wp-plugin-vikingo-studio` | `studio.local` | `site-vikingo-studio`: `CLAUDE.md`, `docs/terv.md` |
+| vikingo.studio (ügynökség) | `site-vikingo-studio` (a bővítmény kódjához még `wp-plugin-vikingo-studio`) | `studio.local` | `site-vikingo-studio`: `docs/klon-frissites.md`, „Új gépen először” |
 
 Letöltés (a mappa számít: a vikingo.hu frissítő szkriptje innen köti be a
 bővítményeket):
@@ -67,14 +67,20 @@ Ha valamelyik ellenőrzés nem stimmel, ne dolgozz tovább a klónon: a leírás
 
 Oldalszerkesztés előtt: platform repó, `docs/oldalszerkesztes.md`.
 
-## vikingo.studio: a klón
+## vikingo.studio: a klón frissítése
 
-A `studio.local` használata a `site-vikingo-studio` repó `CLAUDE.md`-jében
-van („Lokális klón”). A bővítmény a klónon a kiadott zipből fut, nem a
-repóból: a bővítmény változása kiadás után látszik a klónon.
+Ugyanígy egy parancs, a leírás: `site-vikingo-studio`, `docs/klon-frissites.md`.
+A vikingo.studio mentése kell (`vikingo-vikingo-studio-…-full`), a klón fut
+a Localban, majd a `site-vikingo-studio` repóból:
 
-Frissítő szkript ide még nincs. Ha a kollégának nincs `studio.local`-ja,
-vagy élesről kellene frissítenie, ne rögtönözz importot: szóljon Bencének.
+```bash
+bash bin/klon-frissites.sh ~/Downloads/<kicsomagolt-mentés-mappa>
+```
+
+Új gépen a Local Apache-beállítását is javítani kell (a leírás 4. lépése),
+különben a `/wp-admin` rossz címre irányít. A bővítmény a klónon a kiadott
+változat, az élesről jön: a bővítmény kódjának változása kiadás után
+látszik a klónon. A munka szabályai: `site-vikingo-studio`, `CLAUDE.md`.
 
 ## Mindkét klónon érvényes
 
