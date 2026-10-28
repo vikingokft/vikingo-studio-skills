@@ -68,6 +68,8 @@ Láthatóság: `tool-` repo mindig privát. `edu-` és `skill-` lehet publikus, 
 
 Kód-könyvtárak (npm csomagok), sablonok és tudásbázis repók besorolása még nyitott döntés, addig a meglévő, beszédes nevük marad.
 
+Új repó után: rendeld a megfelelő csapathoz (`vikingo`, `vikingo-studio`, `wpviking-kft` vagy `admin`), különben a szervezet alapjoga miatt (semmi) a kollégák nem látják. Korábban átnevezett repó régi nevén ne hozz létre új repót. A csapatok, a hozzáférés, az átnevezési terv és az élő repóleltár: `vikingokft/vikingo-github-szabalyok` (`uj-repo.md`). Ez a skill a szabály egyetlen forrása, az a repó csak hivatkozik rá.
+
 ## 3. Plugin elnevezési konvenciók
 
 Két szintet használunk. Rövid vizuális prefixet a frontend rétegen, és plugin-nevesített prefixet mindenhol, ahol az adat globális térbe kerül. Ez utóbbi azért kell, mert a csupasz `vk_` az adatbázisban vagy egy hookon ütközhetne két Vikingo plugin között. A plugin nevét ezért mindig bele kell tenni.
