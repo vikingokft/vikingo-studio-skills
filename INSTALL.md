@@ -17,6 +17,7 @@ Kurált agent-skilleket, amiket a Claude Code automatikusan előhúz, amikor rel
 - **Web** — frontend biztonsági audit, Vercel/Next.js/React best practices
 - **Általános AI** — Claude skillek (PDF, docx, xlsx, MCP-builder…), OpenAI skillek
 - **Notion** — Notion-integráció
+- **Vikingo arculat** — a `vikingo-design` skill a privát vikingo-design-system repóból
 
 A teljes lista: [README.md](README.md).
 
@@ -37,6 +38,21 @@ Mac-en alapból van. Linux: `sudo apt install git`. Windows: [git for Windows](h
 Mac és Linux: alapból van. **Windows:** Git Bash-ben vagy WSL-ben futtasd
 (a `.sh` scriptek natív CMD/PowerShell-ben nem futnak).
 
+### 4. GitHub-belépés (a Vikingo privát repóihoz)
+A `vikingo-design` skill a Vikingo saját, privát `vikingo-design-system` repójából jön,
+ezt a telepítő a te GitHub-fiókoddal klónozza. Egyszer állítsd be:
+
+```bash
+gh auth login      # GitHub CLI: https://cli.github.com
+gh auth setup-git  # a git is a gh-belépést használja
+```
+
+Kell hozzá, hogy a fiókod hozzáférjen a `vikingokft` szervezet repóihoz.
+
+Ha ez hiányzik, a telepítő nem áll le: a `vikingo-design` skillt figyelmeztetéssel
+kihagyja, a többi skill és az MCP-szerverek rendben települnek. A belépés után futtasd
+újra az `./install-skills.sh`-t, és a `vikingo-design` is megjelenik.
+
 ---
 
 ## Telepítés — 3 parancs
@@ -49,7 +65,7 @@ cd vikingo-studio-skills
 
 Az `install-skills.sh`:
 1. a **bemásolt** skilleket symlinkeli a `~/.claude/skills/`-be;
-2. a **külső** forrásokat (Claude, OpenAI, Notion, Vercel) a `.external/` mappába
+2. a **külső** forrásokat (Claude, OpenAI, Notion, Vercel, vikingo-design-system) a `.external/` mappába
    klónozza a gépeden, majd onnan symlinkeli őket;
 3. az **MCP-szervereket** (`mcp.conf`, pl. chrome-devtools) regisztrálja a Claude
    Code-ba user hatókörrel — minden projektedben elérhetők lesznek. A már

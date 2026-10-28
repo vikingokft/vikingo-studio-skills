@@ -22,6 +22,8 @@ A skillek **két módon** kerülnek hozzád, a forrás licencétől függően:
   **nincsenek bemásolva** — a telepítő a te gépedre klónozza őket közvetlenül az
   eredeti repóból. Így mindig frissek, és ez a repó nem oszt újra licenc nélküli
   tartalmat (jogtiszta marad).
+  Ugyanígy jön a Vikingo saját, privát `vikingo-design-system` repója is (a
+  `vikingo-design` skill), mert az a saját repójában él a tokenekkel és az eszközökkel.
 
 Mindkettőt ugyanaz az egy parancs telepíti, és a Claude Code mindkettőt automatikusan
 előhúzza, amikor releváns.
@@ -55,8 +57,11 @@ git pull && ./install-skills.sh
 | `vikingo-szabvany` | Vikingo plugin- és repo-szabvány: elnevezések, header, struktúra, release, checklist | `vikingo/` |
 | `vikingo-stilus` | Vikingo házi stílus: magyar hangnem, helyesírás, terminológia, üzenet-minták, i18n technika | `vikingo/` |
 | `vikingo-klon` | Munka a weboldalakon: melyik oldalhoz melyik repó és LocalWP-klón, a klón frissítése, a klón biztonsági szabályai | `vikingo/` |
+| `vikingo-design` | A Vikingo arculat egyetlen forrása: színek, tipográfia, logók, piktogramok, illusztrációk, textúrák, kész CSS / Tailwind / Elementor / e-mail tokenek | külső: [vikingo-design-system](https://github.com/vikingokft/vikingo-design-system) `skill/vikingo-design/` |
 
 Ezek kézzel karbantartott skillek, nem a napi szinkron hozza őket. Módosításuk PR-rel történik.
+
+A `vikingo-design` nincs bemásolva ebbe a repóba: a saját repójában (`vikingokft/vikingo-design-system`) él a tokenekkel és az eszközökkel együtt, és az `install-skills.sh` telepítéskor klónozza (external sor a `sources.conf`-ban). A repó **privát**, ezért a gépen GitHub-belépés kell hozzá: `gh auth login`, majd `gh auth setup-git`. Belépés nélkül a telepítő figyelmeztetéssel kihagyja, a többi skill ettől még települ.
 
 ### Bemásolt (vendored) — nyílt licenc
 
@@ -78,6 +83,7 @@ Ezek kézzel karbantartott skillek, nem a napi szinkron hozza őket. Módosítá
 | [OpenAI skills](https://github.com/openai/skills) | fejlesztés, Figma, GitHub… | `ai/` |
 | [Notion](https://github.com/makenotion/claude-code-notion-plugin) | Notion | `docs/` |
 | [Vercel agent-skills](https://github.com/vercel-labs/agent-skills) | Next.js, React, deploy | `web/` |
+| [vikingo-design-system](https://github.com/vikingokft/vikingo-design-system) (saját, privát) | Vikingo arculat (`vikingo-design` skill) | `vikingo/` |
 
 A teljes, gépi forrás-lista: [sources.conf](sources.conf).
 Az attribúció és a licencek: [NOTICE](NOTICE).

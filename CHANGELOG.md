@@ -5,6 +5,14 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 ## [Unreleased]
 
 ### Added
+- **`vikingo-design` skill (external forrás):** a Vikingo arculat egyetlen forrása
+  mostantól a privát `vikingokft/vikingo-design-system` repó. Az `install-skills.sh`
+  a `sources.conf` új external sora alapján klónozza, és a `skill/vikingo-design`
+  mappát symlinkeli. Előfeltétel: GitHub-belépés a gépen (`gh auth login`,
+  `gh auth setup-git`). README és INSTALL kiegészítve.
+- **`install-skills.sh`:** egy external forrás sikertelen klónozása (pl. a privát
+  repó belépés nélkül) már nem állítja le a telepítést: a forrást figyelmeztetéssel
+  kihagyja, és nem kér felhasználónevet a terminálban (`GIT_TERMINAL_PROMPT=0`).
 - **`vikingo-klon` skill:** a kollégák munkakezdése a vikingo.hu-n és a
   vikingo.studio-n: melyik repót töltsék le, melyik a klón, hogyan frissül
   az élesről, mire figyeljenek (valódi levél, éles adat a mentésben). A
@@ -46,6 +54,16 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
   és a célt vesztett symlinkek automatikus eltávolítása telepítéskor.
 
 ### Changed
+- **`vikingo-stilus` – számformátum:** ezreselválasztó pont és tizedesvessző
+  (20.000, 12.500 Ft, 4,9) a táblázatban és az i18n részben. A
+  `number_format_i18n()` a WP locale-t követi, ezért Vikingo-megjelenítéshez
+  `number_format( $n, 0, ',', '.' )` kell; a Ft előtt marad a nem törő szóköz.
+- **`vikingo-szabvany` – arculat (7. pont):** a forrás a vikingo-design-system repó
+  és a `vikingo-design` skill a régi `colors_and_type.css` helyett. A token-részhalmaz
+  az új `--vk-color-*` neveket és a 4px / 40px rádiuszt használja (a panelek
+  szögletesek), a logó az `assets/logo/vikingo-emblem-outline-ink.svg` és
+  `vikingo-emblem-filled-white.svg` (PNG: `assets/logo/png/`). A másolás a repó
+  `scripts/vendor.mjs wp-admin` szkriptjével megy.
 - A `vikingokft/wp-agent-skills` fork 2026-07-10-én törölve lett; a WordPress készlet
   forrása közvetlenül a `Lonsdale201/wp-agent-skills` upstream.
 
