@@ -197,6 +197,10 @@ Referencia-implementáció, amiből másolni kell: `vikingo-backup` és `wp-plug
 1. Egy bejegyzés a `PLUGINS` konstansba: `'{slug}': { repo: 'vikingokft/wp-plugin-{slug}', requires, requiresPhp, tested }`.
 2. `npx wrangler deploy`.
 
+**Cache és purge.** A worker a release metadatát 60 mp-ig cache-eli KV-ban (`plugin_release:{slug}`), a cache-kulcsban a query string NEM szerepel, tehát a `cb=` cache-buster ezen nem segít. Kiadás után a `POST /plugin/purge?slug={slug}` üríti, ezt a release workflow hívja automatikusan. A purge-t szándékosan KÜLÖN kulcs védi (`PLUGIN_PURGE_KEY` Cloudflare secret + `PLUGIN_PURGE_KEY` org-szintű GitHub secret + macOS kulcstartó `vk-plugin-purge-key` bejegyzés a helyi release scriptekhez), NEM a pluginokba égetett update-kulcs: az félig nyilvános, és ha elég lenne a cache átlépéséhez, bárki a GitHub API-ra verhetné a workert. Új plugin repónál a workflow purge lépését a meglévőből kell másolni (referencia: `wp-plugin-fluent-forms-ga4` release.yml), a slug átírásával; a purge hibája nem törheti el a kiadást, csak warning.
+
+**Kiadás utáni sorrend (fontos):** a kézi „Frissítés keresése" gombot NE nyomd meg a kiadás után azonnal, ha a workflow purge lépése még nem futott le: a plugin a worker esetleg régi válaszát 6 órára eltárolja. A workflow végén futó purge után az ellenőrzés azonnal biztonságos.
+
 A GitHub tokennel (`GITHUB_TOKEN` Cloudflare secret, a `vikingoauth-plugin-updates` fine-grained PAT) **nem kell külön semmit csinálni**: a token **Repository access = All repositories**, Contents: Read-only hatókörű, így az org minden mostani és jövőbeli repóját automatikusan látja. Új plugin repónál tehát nincs GitHub-oldali teendő.
 
 **Hibakeresés (ha a `/plugin/update` mégis 502 `release_unavailable`-t ad):** az auditban `github_http_404` a GitHub token gondja — mert privát repónál jogosultsághiányra is 404-et küld, nem 403-at. Okok: a token elveszett/lejárt, vagy valaki visszaszűkítette „Only select repositories"-ra és kimaradt a repo, vagy rossz a resource owner (nem `vikingokft`). A tünet független a release helyességétől. Új token feltöltése: `npx wrangler secret put GITHUB_TOKEN`.
@@ -317,4 +321,5 @@ Az arculati elemek egységesek minden pluginben, ugyanaz a logó (a design syste
 - [ ] Release zip tiszta, dev függőség és node_modules nélkül.
 - [ ] `Update URI` a proxyra mutat (`https://vikingoauth.hu/plugin/{slug}`), a plugin `src/Update/UpdateChecker.php`-t tartalmazza (6.1 pont).
 - [ ] A plugin fel van véve a vikingo-auth-server `PLUGINS` whitelistjébe és a worker deployolva. (A GitHub PAT „All repositories" hatókörű, így új repót nem kell külön felvenni.)
+- [ ] A release workflow tartalmazza a `/plugin/purge` lépést a kiadás után (6.1 pont), különben a csatorna 60 mp-ig a régi verziót adhatja, amit a WP oldal 6 órára eltárol.
 - [ ] Kiadás után a `/plugin/update?slug={slug}` HTTP 200-at ad (curl-teszt a 6.1 pont szerint).

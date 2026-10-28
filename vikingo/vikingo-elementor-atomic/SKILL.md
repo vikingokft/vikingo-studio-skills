@@ -241,6 +241,52 @@ Frissítéskor a referencia-repókat lecserélni, majd ellenőrizni:
 - [ ] Élesen az állapotfigyelő próbája (admin-értesítés nincs, vagy
       „Ellenőrzés újra” után „mind a N widget rendben”).
 
+## 9.1. Beágyazott (gyerekes) elem
+
+Ha a tartalom maga az Elementor-adat (kézzel kitöltött diák, kártyák), nem
+widget kell, hanem az Elementor Accordion / Tabs mintájú beágyazott elem.
+Bizonyított minta: vk-vikingo-hu-platform 0.61.0, `src/Korhinta/`
+(Tartalomkörhinta). Ez a 0. pont két elve alóli SZÁNDÉKOS kivétel: nincs
+`rendered_html` és nincs shortcode-tartalék, mert Elementor nélkül nincs
+tartalom.
+
+- **Anatómia:** `Atomic_Element_Base` + `use Has_Element_Template`; a twig
+  gyökerében `<!-- elementor-children-placeholder -->`. A szülő
+  `define_allowed_child_types()` + `define_default_children()`
+  (`Element_Builder::make( TIPUS )->children(...)->build()`), a gyerek
+  `should_show_in_panel()` = false. A gyerek a szülő adatát
+  `define_render_context()` → `Render_Context::get( Szulo::class )` útján
+  kapja (pl. a saját sorszámát).
+- **Regisztráció:** `elementor/elements/elements_registered` horog,
+  `$elements_manager->register_element_type()`; guard: `class_exists`
+  (`Atomic_Element_Base`, `Element_Builder`) + `trait_exists`
+  (`Has_Element_Template`), try/catch. A platformon:
+  `Registrar::register_elements()`.
+- **Assetek:** `get_style_depends()` / `get_script_depends()` a
+  frontenden működik; a frontend-kezelő
+  `window.elementorV2.frontendHandlers.register({ elementType, id,
+  callback({ element, signal }) })`, függőség:
+  `elementor-v2-frontend-handlers`. A vásznon is lefut.
+- **A helyőrző a gyökér KÖZVETLEN gyereke legyen** a vásznon (a szerkesztő
+  a gyökér childNodes-ai közt keresi). Ha a frontenden más szerkezet kell
+  (szalag, gombok), a twig ága: `{% if editor_attributes is defined %}` =
+  vászon. A PHP-oldali str_replace a helyőrzőt bárhol megtalálja.
+- **A szülőt az Elementor nem korlátozza:** a gyerek kihúzható a szülőből,
+  és a szülőbe bármi behúzható. Szerkesztő-szkript (`elementor/editor/
+  after_enqueue_scripts`) `$e.modules.hookData.Dependency` horgokkal a
+  `document/elements/move`, `/create`, `/paste` parancsokon. A
+  `permanently_locked` meta NEM megoldás: a duplikálást, másolást és
+  törlést is tiltja.
+- **A kezdő gyerekek `styles` kulcsát az Elementor eldobja** (az osztály
+  megmarad, a stílus nem). Globális osztály (címkéből feloldva: a kit
+  `_elementor_global_classes_labels` metája) működik; színt a saját CSS adjon
+  (0,1,2) erősséggel: a kit `hN`-jénél (0,1,1) erősebb, a helyi stílusnál
+  és a globális osztálynál (`.elementor .x` = 0,2,0) gyengébb.
+- **A vásznon minden widget `.elementor-element` burkolóban ül:** a `>`
+  gyerek-szelektorok e szintet is fedjék le.
+- **Generikus REST-hidratáló** (ha van): a beágyazott elemet hagyja ki
+  (jelölő attribútum), különben a gyerekeket felülírja.
+
 ## 10. Ismert buktatók
 
 - **Widget-név = adat.** `get_element_type()` átnevezése minden meglévő
