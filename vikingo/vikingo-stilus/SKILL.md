@@ -60,6 +60,10 @@ Ugyanarra a fogalomra mindig ugyanazt a szót használjuk. A felhasználónak l�
 | frissítés | update, aktualizálás | szoftver és adat |
 | feltöltés / letöltés | upload / download | fájlok |
 | keresés | search | mező, gomb |
+| eredeti forrás | első érintés, first touch | attribúció: honnan találta meg először a látogató az oldalt |
+| utolsó forrás | utolsó érintés, last touch | attribúció: honnan jött a konverzió előtt |
+
+Az attribúciós mezőknél a jelzős, egyszintű alak érvényes: „Eredeti forrás", „Utolsó kampány", nem „Első érintés: Forrás". Az „érintés" a `touch` szolgai fordítása, magyarul nem áll meg, a kétszintű „csoport: mező" szerkezet pedig hosszú és nehezen olvasható CSV-fejlécet ad. Kódban és belső dokumentációban a `touch` mint azonosító rendben van (`first_touch`, `touch_labels`), mert az a bevett szakkifejezés.
 
 Ha új, gyakran visszatérő fogalom kerül elő, vedd fel ebbe a táblázatba, ne dönts ad hoc.
 
