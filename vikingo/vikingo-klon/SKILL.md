@@ -77,12 +77,17 @@ a Localban, majd a `site-vikingo-studio` repóból:
 bash bin/klon-frissites.sh ~/Downloads/<kicsomagolt-mentés-mappa>
 ```
 
-Új gépen a Local Apache-beállítását is javítani kell (a leírás 4. lépése),
-különben a `/wp-admin` rossz címre irányít. A bővítmény a klónon a kiadott
+A bővítmény a klónon a kiadott
 változat, az élesről jön: a bővítmény kódjának változása kiadás után
 látszik a klónon. A munka szabályai: `site-vikingo-studio`, `CLAUDE.md`.
 
 ## Mindkét klónon érvényes
+
+- **Az SSL-t a szkript teszi rendbe.** A Local új oldalnál elsőre rosszul
+  állítja be: a tanúsítvány nem megbízható, vagy a `/wp-admin` a belső,
+  `http`-s portra visz. Mindkét szkript minden futáskor javítja; ha a Mac
+  jelszót kér egy felugró ablakban, az a kolléga saját gépes jelszava, a
+  tanúsítványhoz. Kézzel (Local „Trust” gomb, `site.conf.hbs`) ne javítsd.
 
 - **A klón valódi levelet küld** (az éles levélküldő beállítás jön át):
   űrlapot, vásárlást, feliratkozást csak a saját címével próbáljon.
