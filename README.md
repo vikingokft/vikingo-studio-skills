@@ -54,6 +54,7 @@ git pull && ./install-skills.sh
 |---|---|---|
 | `vikingo-szabvany` | Vikingo plugin- és repo-szabvány: elnevezések, header, struktúra, release, checklist | `vikingo/` |
 | `vikingo-stilus` | Vikingo házi stílus: magyar hangnem, helyesírás, terminológia, üzenet-minták, i18n technika | `vikingo/` |
+| `vikingo-klon` | Munka a weboldalakon: melyik oldalhoz melyik repó és LocalWP-klón, a klón frissítése, a klón biztonsági szabályai | `vikingo/` |
 
 Ezek kézzel karbantartott skillek, nem a napi szinkron hozza őket. Módosításuk PR-rel történik.
 
