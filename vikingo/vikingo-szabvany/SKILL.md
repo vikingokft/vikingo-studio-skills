@@ -246,29 +246,36 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
 } );
 ```
 
-Az arculat forrása a **Vikingo Design System** (Claude Designnal épített rendszer, `colors_and_type.css`), az az egyetlen igazság-forrás. A WordPress pluginekbe ebből CSAK az alábbi, származtatott token-részhalmaz kerül át, bemásolva a plugin admin CSS-ébe (nincs külső kérés, nincs npm függőség, kb. fél kilobájt). A React és web-component réteg, az illusztrációs színpaletta és a brand fontok (Clash Display, DM Mono) NEM jönnek át; a komponensek a natív WP admin elemek, csak a színüket és a rádiuszt kapják a tokenekből.
+Az arculat egyetlen forrása a **vikingo-design-system** repó (`vikingokft/vikingo-design-system`, privát), és a benne lévő **`vikingo-design`** skill. Színt, rádiuszt, fontot soha ne írj be fejből: a pontos értékek a repó `tokens/vikingo.tokens.json` fájljában vannak, a wp-admin szabályai a skill `platforms/wp-admin.md` oldalán. A régi `colors_and_type.css` és a régi `design-system/` másolatok elavultak, ne használd őket.
+
+A WordPress pluginekbe ebből CSAK a színtokenek kerülnek át, a plugin saját mappájába másolva (nincs külső kérés, nincs npm függőség). A másolást a repó szkriptje végzi (`$VDS` a repó helyi klónja, a megkeresését a `vikingo-design` skill írja le):
+
+```bash
+node "$VDS/scripts/vendor.mjs" wp-admin <plugin-mappa> --assets=logo
+```
+
+Ez a `dist/css/tokens.css`-t (csak CSS-változók, font és osztály nélkül) és a logókat teszi a plugin `vikingo/` mappájába. A brand fontok (Clash Display, DM Mono), az illusztrációs paletta és a témakör-színek NEM kellenek az adminba; a komponensek a natív WP admin elemek, csak a színüket kapják a tokenekből. Ha csak pár sor kell, a `tokens.css`-ből a ténylegesen használt változókat is bemásolhatod a plugin admin CSS-ébe, a nevükön (`--vk-color-*`), értéket nem átírva:
 
 ```css
-/* Vikingo admin tokenek. Származtatva: Vikingo Design System,
-   colors_and_type.css. Arculatváltásnál ott a teljes készlet,
-   itt ez a részhalmaz frissül. */
+/* Vikingo admin tokenek. Forrás: vikingo-design-system,
+   dist/css/tokens.css. Arculatváltásnál ott változik, itt csak
+   újramásolod. */
 :root .vk-admin {
-	--vk-color-primary:       #FF544D; /* korall */
-	--vk-color-primary-hover: #E83D36;
-	--vk-color-accent:        #3E2E45; /* padlizsán (ink) */
-	--vk-color-bg:            #F3EEEB; /* meleg krém (paper) */
-	--vk-color-surface:       #FFFFFF;
-	--vk-color-border:        #DCD0C3; /* sand */
-	--vk-color-text-muted:    #7A687F; /* mauve */
-	--vk-radius-sm:           8px;     /* mezők, kis elemek */
-	--vk-radius:              12px;    /* gombok, panelek */
-	--vk-radius-lg:           16px;    /* kártyák, nagy dobozok */
+	--vk-color-coral:        #FF544D; /* kiemelés, márkajelzés */
+	--vk-color-coral-hover:  #E83D36;
+	--vk-color-ink:          #3E2E45; /* szöveg, sötét kiemelés */
+	--vk-color-light-fill:   #F3EEEB; /* világos háttér */
+	--vk-color-white:        #FFFFFF;
+	--vk-color-light-border: #DCD0C3; /* keret */
+	--vk-color-mauve:        #7A687F; /* halvány szöveg */
+	--vk-radius-4:           4px;     /* kis elemek (mező, címke) */
+	--vk-radius-40:          40px;    /* pill gomb */
 }
 ```
 
-Ennél több token pluginbe nem kerül. Ha egy plugin frontend felülete (felhasználónak látszó widget) többet igényel, ott is a design system tokenjeit használjuk, de csak a ténylegesen használt sorokat másoljuk át, buildelt CSS-ként.
+A kártyák, panelek és dobozok szögletesek (nincs rádiusz), árnyék és színátmenet nincs. Ennél több token pluginbe nem kerül. Ha egy plugin frontend felülete (felhasználónak látszó widget) többet igényel, ott is a design system tokenjeit használjuk (`vendor.mjs html`), de csak a ténylegesen használt sorokat visszük át, buildelt CSS-ként.
 
-Az arculati elemek egységesek minden pluginben, ugyanaz a logó (a design system repo `vikingo-emblema-*.svg` fájljai inline SVG-ként), ugyanaz a színvilág, ugyanaz a szerzői link. A plugin listában a support és dokumentáció linket a `plugin_row_meta` szűrővel adjuk hozzá, mindig a `vikingo.studio` alá mutatva.
+Az arculati elemek egységesek minden pluginben: ugyanaz a logó, ugyanaz a színvilág, ugyanaz a szerzői link. A logó az embléma a vikingo-design-system repóból, inline SVG-ként: világos háttéren `assets/logo/vikingo-emblem-outline-ink.svg`, sötét háttéren `assets/logo/vikingo-emblem-filled-white.svg` (raszteres változatuk az `assets/logo/png/` mappában, azonos néven). A plugin listában a support és dokumentáció linket a `plugin_row_meta` szűrővel adjuk hozzá, mindig a `vikingo.studio` alá mutatva.
 
 ## 8. Biztonsági alapkövetelmények
 

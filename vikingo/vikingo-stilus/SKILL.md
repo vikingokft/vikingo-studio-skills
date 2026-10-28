@@ -30,8 +30,8 @@ Elsőbbség: ha egy általános skill angol forrás-szövegeket vagy más hangne
 | Tartomány | nagykötőjel szóköz nélkül | 8–10 munkanap |
 | Dátum | év. hónapnév nap. | 2026. július 10. |
 | Idő | kettősponttal | 14:30 |
-| Szám | ezresek nem törő szóközzel | 10 000 |
-| Pénz | összeg + szóköz + Ft | 12 500 Ft |
+| Szám | ezreselválasztó pont, tizedesvessző | 10.000 · 20.000 · 4,9 |
+| Pénz | összeg (ezreselválasztó ponttal) + nem törő szóköz + Ft | 12.500 Ft |
 | Százalék | szóköz nélkül | 25% |
 | Ellipszis | egyetlen … karakter | Betöltés… |
 | E-mail szó | kötőjellel | e-mail cím |
@@ -88,8 +88,9 @@ sprintf( esc_html__( 'A(z) „%s" kupon létrejött.', 'vk-fegyvertar-access' ),
 ```
 
 - Többes szám `_n()`-nel, mert a magyar egyes/többes alak eltér: `_n( '%s rendelés', '%s rendelés', $count, ... )` helyett valódi eltérő alakok, pl. "1 új rendelés" / "%s új rendelés".
-- Dátum kiírása `wp_date()`-tel a WordPress beállított formátumában, szám kiírása `number_format_i18n()`-nel. Kézzel formázott dátum és szám tilos.
-- A helyesírási szabályok (2. pont) a kódban lévő magyar stringekre is érvényesek: magyar idézőjel, nagykötőjel, nem törő szóköz (`&nbsp;` vagy `\u{00A0}`) az ezresek és a Ft előtt.
+- Dátum kiírása `wp_date()`-tel a WordPress beállított formátumában. Kézzel összerakott dátum tilos.
+- Szám kiírása: a `number_format_i18n()` a WordPress nyelvi beállítását követi (magyar locale-ban szóközzel tagol), ezért Vikingo-megjelenítésre nem elég. A Vikingo-formátum kötelező: ezreselválasztó pont, tizedesvessző, például `number_format( $n, 0, ',', '.' )` (20.000) vagy tizedessel `number_format( $n, 1, ',', '.' )` (4,9). JavaScriptben: `new Intl.NumberFormat( 'de-DE' ).format( n )` ugyanezt adja. Ezt egy közös segédfüggvénybe tedd, ne szórd szét a kódban.
+- A helyesírási szabályok (2. pont) a kódban lévő magyar stringekre is érvényesek: magyar idézőjel, nagykötőjel, nem törő szóköz (`&nbsp;` vagy `\u{00A0}`) a Ft előtt (12.500&nbsp;Ft). Az ezreseket ponttal tagoljuk, nem szóközzel.
 
 ## 6. E-mailek
 
