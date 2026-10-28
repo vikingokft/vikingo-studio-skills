@@ -5,6 +5,10 @@ A formátum a [Keep a Changelog](https://keepachangelog.com/) elvét követi.
 ## [Unreleased]
 
 ### Added
+- **`vikingo-klon` skill:** a kollégák munkakezdése a vikingo.hu-n és a
+  vikingo.studio-n: melyik repót töltsék le, melyik a klón, hogyan frissül
+  az élesről, mire figyeljenek (valódi levél, éles adat a mentésben). A
+  lépésekre az oldalak repójának leírása mutat, itt nincs másolatuk.
 - **MCP-szerver manifest (`mcp.conf`) + telepítő-lépés:** az `install-skills.sh`
   a skillek mellé a felsorolt MCP-szervereket is regisztrálja a Claude Code-ba
   user hatókörrel (újrafuttatás-biztos, a már regisztráltat kihagyja). Első
