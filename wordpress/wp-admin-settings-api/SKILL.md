@@ -1,26 +1,14 @@
 ---
 name: wp-admin-settings-api
-description: Build plugin admin settings pages with the WordPress Settings
-  API instead of custom form handlers. Covers `register_setting()`,
-  `add_settings_section()`, `add_settings_field()`, `settings_fields()`,
-  `do_settings_sections()`, `add_settings_error()`, `settings_errors()`,
-  `admin_init` registration, `<form method="post" action="options.php">`,
-  `sanitize_callback`, `$option_group` vs `$page`, single-array option
-  storage, tabbed pages, `show_in_rest` schemas, custom option capabilities
-  via `option_page_capability_{$option_group}`, and the mistake of POSTing
-  to your own handler. Use for plugin settings screens, integration config,
-  feature toggles, or any options page that saves to `wp_options`.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: "6.0 - 7.0"
-php-min: "7.4"
-last-updated: "2026-05-24"
-docs:
-  - https://developer.wordpress.org/reference/functions/register_setting/
-  - https://developer.wordpress.org/reference/functions/add_settings_section/
-  - https://developer.wordpress.org/reference/functions/add_settings_field/
-  - https://developer.wordpress.org/plugins/settings/settings-api/
+description: Build plugin admin settings pages with the WordPress Settings API instead of custom form handlers. Covers `register_setting()`, `add_settings_section()`, `add_settings_field()`, `settings_fields()`, `do_settings_sections()`, `add_settings_error()`, `settings_errors()`, `admin_init` registration, `form method="post" action="options.php"`, `sanitize_callback`, `$option_group` vs `$page`, single-array option storage, keyed field names, tabbed pages, `show_in_rest` schemas including object/array schemas, custom option capabilities via `option_page_capability_{$option_group}`, deprecated settings groups, and the mistake of POSTing to your own handler. Use for plugin settings screens, integration config, feature toggles, or any options page that saves to `wp_options`.
+metadata:
+  wp-skills-author: "Soczó Kristóf"
+  wp-skills-contact: "mailto:lonsdale201@hotmail.com"
+  wp-skills-plugin: "wordpress"
+  wp-skills-plugin-version-tested: "6.0 - 7.1"
+  wp-skills-wp-version-tested: "7.1"
+  wp-skills-php-min: "7.4"
+  wp-skills-last-updated: "2026-08-20"
 ---
 
 # WordPress Settings API
@@ -117,26 +105,41 @@ add_action( 'admin_init', static function (): void {
 } );
 ```
 
+WordPress 7.1 gives each non-empty section title a generated unique `<h2 id>`
+when `do_settings_sections()` renders it. This improves programmatic heading
+association, but the ID contains a `wp_unique_id()` suffix and is not a stable
+plugin selector. Use your own wrapper/classes or the section slug for CSS/JS;
+do not parse or persist the generated heading ID. Repeated section rendering in
+one request intentionally yields different IDs.
+
 ### 3. Field render callbacks
 
 Render callbacks echo normal form controls. The `name` attribute ties the input to the `$option_name` array: `myplugin_options[api_key]` lands in `$_POST['myplugin_options']['api_key']` and arrives at `sanitize_callback` as `$input['api_key']`. See `reference.md` for checkbox and text-field callbacks.
+
+Treat the option array as a schema, not a loose bucket: every subkey must have a default, one type, one meaning, and a sanitizer. Drop unknown keys unless forward compatibility is deliberate.
 
 ### 4. The single sanitize callback
 
 ```php
 function myplugin_sanitize_options( $input ): array {
     $defaults = array( 'enabled' => false, 'api_key' => '', 'log_level' => 'info' );
+    $input    = is_array( $input ) ? $input : array();
     $existing = get_option( 'myplugin_options', $defaults );
+    $existing = is_array( $existing ) ? array_replace( $defaults, $existing ) : $defaults;
 
     $clean = $existing;  // start from current saved state so untouched tabs don't get blanked
 
-    // Boolean.
-    $clean['enabled'] = ! empty( $input['enabled'] );
+    // A hidden enabled=0 input makes this key present only on the tab that owns it.
+    if ( array_key_exists( 'enabled', $input ) ) {
+        $clean['enabled'] = ! empty( $input['enabled'] );
+    }
 
-    // String with format check.
-    if ( isset( $input['api_key'] ) ) {
+    // A blank password field means "unchanged"; clearing is explicit.
+    if ( ! empty( $input['clear_api_key'] ) ) {
+        $clean['api_key'] = '';
+    } elseif ( isset( $input['api_key'] ) && '' !== trim( (string) $input['api_key'] ) ) {
         $api_key = trim( (string) $input['api_key'] );
-        if ( $api_key !== '' && ! preg_match( '/^[A-Za-z0-9_-]{20,}$/', $api_key ) ) {
+        if ( ! preg_match( '/^[A-Za-z0-9_-]{20,}$/', $api_key ) ) {
             add_settings_error( 'myplugin_options', 'api_key_invalid',
                 __( 'API key format is invalid.', 'myplugin' ) );
             // Keep the existing value rather than letting the bad one through.
@@ -186,7 +189,8 @@ function myplugin_render_settings_page(): void {
 }
 ```
 
-The form action `options.php` is **mandatory**. That's the core handler that:
+For a classic per-site Settings API form, the action `options.php` is
+**mandatory**. That's the core handler that:
 
 1. Verifies the `settings_fields()` nonce.
 2. Verifies `current_user_can( 'manage_options' )` by default, or a custom cap when you filter `option_page_capability_{$option_group}`.
@@ -194,11 +198,19 @@ The form action `options.php` is **mandatory**. That's the core handler that:
 4. Calls `update_option()` on each option in that group (your `sanitize_callback` runs here).
 5. Flashes the standard "Settings saved" notice and redirects back to your page with `?settings-updated=true`.
 
-Bypass this and you lose all of it.
+Custom `admin-post.php` handlers and multisite network settings are valid
+different architectures, but then you own the full nonce, capability,
+allowlist, validation, update, and redirect flow.
 
 ## Tabs pattern
 
-The Settings API doesn't ship tabs — you build them. Use one `$_GET['tab']` query var, one form per tab posting to `options.php`, and separate `$option_group` / `$page` slugs per tab. All tabs can still write to the same `$option_name` as long as the sanitize callback starts from the existing option and only overwrites submitted keys. See `reference.md` for the full tab scaffold.
+The Settings API doesn't ship tabs — you build them. Use one `$_GET['tab']`
+query var, one form per tab posting to `options.php`, and separate
+`$option_group` / `$page` slugs per tab. All tabs can write the same
+`$option_name` only when every `register_setting()` call supplies identical
+type/default/schema/sanitizer metadata: registration is global by option name,
+so a later call replaces those args. The sanitizer must merge over existing
+state and only overwrite keys submitted by that tab.
 
 ## Surfacing settings in REST / Site Editor — `show_in_rest`
 
@@ -207,6 +219,8 @@ When `show_in_rest => true` (or a schema array), the setting becomes readable / 
 REST writes go through the same `sanitize_callback`. Important: REST permissions default to `manage_options`-or-equivalent on `/wp/v2/settings` — fine for plugin-admin settings, NOT fine if you want a lower-privileged user to update a subset. For per-cap REST writes, register a dedicated REST route instead.
 
 For object settings, pass a schema with `properties`; see `reference.md`.
+
+For array settings, core requires `show_in_rest.schema.items` when `show_in_rest` is not false. Without it, `register_setting()` triggers `_doing_it_wrong()`. For object settings, define `properties` and keep `additionalProperties` false unless arbitrary keys are intentional.
 
 ## Flash messages — `add_settings_error` + `settings_errors`
 
@@ -222,14 +236,24 @@ Do not use `$hide_on_update = true` as a way to hide the default saved notice af
 
 ## Single-array vs one-option-per-field
 
-The bootstrap above uses ONE option (`myplugin_options`) holding an array. This is the right default for plugin settings: fewer DB rows, single autoload entry, one nonce, one sanitize callback. One-option-per-field is valid only when other code genuinely needs separate option names. See `reference.md` for the alternate registration shape.
+The bootstrap above uses ONE option (`myplugin_options`) holding an array. This
+is a good default for cohesive, similarly accessed settings. Separate cold,
+large, independently owned, or sensitive values when they need different
+autoload/access/lifecycle behavior; an API secret does not need to ride in an
+otherwise hot autoloaded UI-options array. See `reference.md` for the alternate
+registration shape.
 
 ## Critical rules
 
-- **Form action MUST be `options.php`**. POSTing to your own page handler discards core's nonce + cap + option-page-allowlist check.
+- **Classic per-site Settings API forms post to `options.php`**. Posting that
+  same form to your page discards core's nonce, capability, and allowed-option
+  flow. A deliberately custom handler is a different architecture and must
+  reimplement those controls explicitly.
 - **`settings_fields( $option_group )` MUST match a `register_setting()`'s first arg**. Mismatch = `options.php` (verified line 249) calls `wp_die()` with the message *"Error: The `<group>` options page is not in the allowed options list."* — the form post is dropped before any sanitize callback runs.
 - **`add_settings_section()` / `add_settings_field()` `$page` MUST match `do_settings_sections( $page )`**. Mismatch = nothing renders (no error — silent failure).
 - **Call `register_setting()` on `admin_init`, NOT in your menu-page render callback**. The menu page only renders when the user views it; `options.php` validates against the `$option_group` registry, which is built on `admin_init` for every admin request.
+- **Do not rely on unregistered option posts to `options.php`**. Core treats unregistered settings as deprecated. Register every option that the form saves.
+- **Do not use `misc` or `privacy` as settings groups/pages**. Core maps them to `general` / `reading` with deprecated-argument notices.
 - **`sanitize_callback` runs on every save, including REST writes**. Don't put side effects (sending emails, calling external APIs) directly in it — return the cleaned value. Side effects belong in a separate `update_option_myplugin_options` hook.
 - **`sanitize_callback` is called with the full submitted array for array options**. For tabs to coexist, start from the existing saved value and only overwrite keys present in `$input`.
 - **`current_user_can()` defaults to `manage_options` for `options.php`**. Override by using `add_menu_page()` with a custom cap AND filtering `option_page_capability_{$option_group}` to require the same.
@@ -242,6 +266,7 @@ See `reference.md` for before/after snippets: posting to your own handler, regis
 ## Cross-references
 
 - See **`wp-plugin-options-storage`** for choosing between options vs custom tables vs user meta — the storage layer beneath the Settings API.
+- See **`wp-settings-storage-audit`** when reviewing the whole settings persistence contract: array shape, defaults, autoload, REST schema, Customizer boundary, update hooks, and deprecations.
 - See **`wp-admin-form-controls`** for color picker / date picker / pointer / autocomplete widgets to drop into field render callbacks.
 - See **`wp-admin-codemirror`** when a settings field is a CSS/JSON/code textarea.
 - See **`wp-admin-media-frame`** when a settings field picks an image or file.
@@ -256,12 +281,14 @@ See `reference.md` for before/after snippets: posting to your own handler, regis
 
 ## References
 
-- `wp-includes/option.php:2994` — `register_setting()` definition with the full `$args` shape.
-- `wp-admin/includes/template.php:1637` — `add_settings_section()`.
-- `wp-admin/includes/template.php:1715` — `add_settings_field()`.
-- `wp-admin/includes/template.php:1766` — `do_settings_sections()`.
-- `wp-admin/includes/template.php:1870` — `add_settings_error()`.
-- `wp-admin/includes/template.php:1985` — `settings_errors()` with the `$hide_on_update` arg.
 - `wp-admin/includes/plugin.php:2347` — `settings_fields()` (emits the nonce + option_page + action hidden fields).
 - `wp-admin/options.php` — the core handler your form posts to; read it to understand what verification you get for free.
 - `reference.md` — tabs, REST schema, flash messages, one-option-per-field, and common mistakes.
+- Official documentation: <https://developer.wordpress.org/reference/functions/register_setting/>
+- Official documentation: <https://developer.wordpress.org/reference/functions/add_settings_section/>
+- Official documentation: <https://developer.wordpress.org/reference/functions/add_settings_field/>
+- Official documentation: <https://developer.wordpress.org/plugins/settings/settings-api/>
+- Verified source paths:
+  - `wp-includes/option.php`
+  - `wp-admin/includes/template.php`
+  - `wp-includes/rest-api/endpoints/class-wp-rest-settings-controller.php`
